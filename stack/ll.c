@@ -24,9 +24,168 @@
  *  SOFTWARE.
  */
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "log.h"
+#include "radio.h"
+#include "timer.h"
+
 #include "ll.h"
+
+/* Link Layer specification Section 2.1, Core 4.1 page 2503 */
+#define LL_MTU			39
+
+/* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
+#define LL_MTU_ADV		37
+
+/* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
+#define LL_ACCESS_ADDRESS_ADV	0x8E89BED6
+
+/* TODO: doc */
+#define LL_CRC_ADV		0x555555
+
+/* TODO:
+ * 1. Create a config.h for address and address type;
+ * 1.1. Create enum type for address type;
+ */
+
+static struct {
+	uint8_t address[6];
+	uint8_t address_type;
+} config = { {0xFE, 0xCA, 0xFE, 0xCA, 0xBA, 0xBE}, 0};
+
+/* Link Layer specification Section 1.1, Core 4.1 page 2499 */
+typedef enum ll_states {
+	LL_STATE_STANDBY,
+	LL_STATE_ADVERTISING,
+	LL_STATE_SCANNING,
+	LL_INITIATING_SCANNING,
+	LL_CONNECTION_SCANNING,
+} ll_states_t;
+
+/* Link Layer specification Section 2.3, Core 4.1 page 2505 */
+typedef enum ll_pdu_type {
+	LL_PDU_ADV_IND,		/* connectable undirected */
+	LL_PDU_ADV_DIRECT_IND,	/* connectable directed */
+	LL_PDU_ADV_NONCONN_IND,	/* non-connectable undirected */
+	LL_PDU_SCAN_REQ,
+	LL_PDU_SCAN_RSP,
+	LL_PDU_CONNECT_REQ,
+	LL_PDU_ADV_SCAN_IND	/* scannable undirected */
+} ll_pdu_type_t;
+
+/* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
+typedef struct ll_pdu_adv {
+	uint8_t pdu_type:4;
+	uint8_t _rfu_0:2;
+	uint8_t tx_add:1;
+	uint8_t rx_add:1;
+	uint8_t length:6; /* 6 <= length <= 37 */
+	uint8_t _rfu_1:2;
+	uint8_t payload[LL_MTU_ADV];
+} __attribute__ ((packed)) ll_pdu_adv_t;
+
+static ll_states_t current_state;
+
+static uint8_t adv_chs[] = { 37, 38, 39 };
+static uint8_t adv_ch_idx = 0;
+
+static int16_t t_adv_event;
+static uint32_t t_adv_event_interval;
+static int16_t t_adv_pdu;
+static uint32_t t_adv_pdu_interval;
+
+static ll_pdu_adv_t pdu_adv;
+
+static void t_adv_event_cb(void *user_data)
+{
+	adv_ch_idx = 0;
+
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
+
+	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+}
+
+static void t_adv_pdu_cb(void *user_data)
+{
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
+
+	if (adv_ch_idx < 3)
+		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+}
+
+int ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
+{
+	if (current_state != LL_STATE_STANDBY)
+		return -1;
+
+	memset(&pdu_adv, 0, sizeof(pdu_adv));
+
+	switch (type) {
+
+	case LL_ADV_NONCONN_UNDIR:
+		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
+		pdu_adv.tx_add = config.address_type == 0 ? 0 : 1;
+		pdu_adv.length = len + sizeof(config.address);
+
+		memcpy(pdu_adv.payload, config.address, sizeof(config.address));
+		memcpy(pdu_adv.payload + sizeof(config.address), data, len);
+
+		t_adv_event_interval = 100; /* <= 1024ms, Sec 4.4.2.2 pag 2528 */
+		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
+
+		break;
+
+	case LL_ADV_SCAN_UNDIR:
+	case LL_ADV_CONN_UNDIR:
+	case LL_ADV_CONN_DIR:
+		/* Not implemented */
+		return -1;
+		break;
+	}
+
+	DBG("Starting advertise: PDU interval %ums, event interval %ums",
+				t_adv_pdu_interval, t_adv_event_interval);
+
+	current_state = LL_STATE_ADVERTISING;
+	adv_ch_idx = 0;
+
+	timer_start(t_adv_event, t_adv_event_interval, NULL);
+	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
+
+	return 0;
+}
+
+int ll_advertise_stop()
+{
+	if (current_state != LL_STATE_ADVERTISING)
+		return -1;
+
+	timer_stop(t_adv_pdu);
+	timer_stop(t_adv_event);
+
+	current_state = LL_STATE_STANDBY;
+
+	return 0;
+}
 
 int ll_init(void)
 {
+	log_init();
+	timer_init();
+	radio_init();
+
+	current_state = LL_STATE_STANDBY;
+
+	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
+	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
+
 	return 0;
 }

@@ -24,4 +24,15 @@
  *  SOFTWARE.
  */
 
+/* Link Layer specification Section 4.4.2, Core 4.1 page 2527 */
+typedef enum ll_adv_type {
+	LL_ADV_NONCONN_UNDIR,	/* non-connectable undirected */
+	LL_ADV_SCAN_UNDIR,	/* scannable undirected */
+	LL_ADV_CONN_UNDIR,	/* connectable undirected */
+	LL_ADV_CONN_DIR		/* connectable directed */
+} ll_adv_type_t;
+
 int ll_init(void);
+
+int ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len);
+int ll_advertise_stop(void);
