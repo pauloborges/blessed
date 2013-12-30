@@ -1,0 +1,27 @@
+                  B L E S S E D
+Bluetooth Low Energy Software Stack for Embedded Devices
+
+This is an open source project targeting Bluetooth Low Energy
+communication for embedded devices. Usage of proprietary library is
+not encouraged.
+
+For NRF51822, SoftDevice device library creates abstraction for Bluetooth
+Radio and GATT procedures. The available examples in this project are not
+linking against any NRF library, the radio is being controlled directly
+without proprietary libraries.
+
+* How-to build:
+
+At the moment only NRF51822 is supported, support for ubertooth is on the
+roadmap.
+
+Change NRF51_SDK_PATH (see platform/nrf51822/Makefile.platform) to your
+SDK path directory
+
+In the project root directory, build the stack, and platform core libraries
+$ make PLATFORM=nrf51822
+
+Inside the examples:
+$ make PLATFORM=nrf51822
+
+* How-to flash:
