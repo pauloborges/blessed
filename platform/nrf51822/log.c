@@ -89,6 +89,8 @@ int16_t log_init(void)
 {
 	uint32_t err_code;
 
+	UNUSED(err_code);
+
 	app_uart_comm_params_t params = {
 		RX_PIN_NUMBER,
 		TX_PIN_NUMBER,
@@ -101,9 +103,6 @@ int16_t log_init(void)
 
 	APP_UART_INIT(&params, 0, 0, uart_evt_handler, IRQ_PRIORITY_HIGHEST,
 								err_code);
-
-	if (err_code != NRF_SUCCESS)
-		return -1;
 
 	state = READY;
 

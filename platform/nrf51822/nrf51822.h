@@ -28,3 +28,5 @@
 #define IRQ_PRIORITY_HIGH		1
 #define IRQ_PRIORITY_MEDIUM		2
 #define IRQ_PRIORITY_LOW		3
+
+#define UNUSED(symbol)			((void) symbol)
