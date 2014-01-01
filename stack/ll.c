@@ -118,7 +118,7 @@ static void t_adv_pdu_cb(void *user_data)
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
 }
 
-int ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
+int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 {
 	if (current_state != LL_STATE_STANDBY)
 		return -1;
@@ -163,7 +163,7 @@ int ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 	return 0;
 }
 
-int ll_advertise_stop()
+int16_t ll_advertise_stop()
 {
 	if (current_state != LL_STATE_ADVERTISING)
 		return -1;
@@ -176,7 +176,7 @@ int ll_advertise_stop()
 	return 0;
 }
 
-int ll_init(void)
+int16_t ll_init(void)
 {
 	log_init();
 	timer_init();
