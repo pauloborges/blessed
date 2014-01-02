@@ -35,16 +35,19 @@
 #include <boards.h>
 
 #include "nrf51822.h"
+#include "errcodes.h"
 #include "log.h"
 
 #define BUFFER_LEN			128
-#define READY				0
-#define BUSY				1
+
+#define UNINITIALIZED			0
+#define READY				1
+#define BUSY				2
 
 static uint16_t pos;
 static uint16_t len;
 static uint8_t buffer[BUFFER_LEN];
-static uint8_t state;
+static uint8_t state = UNINITIALIZED;
 
 static __inline void tx_next_byte(void)
 {
@@ -100,6 +103,9 @@ int16_t log_init(void)
 		false,
 		UART_BAUDRATE_BAUDRATE_Baud115200
 	};
+
+	if (state != UNINITIALIZED)
+		return -EALREADY;
 
 	APP_UART_INIT(&params, 0, 0, uart_evt_handler, IRQ_PRIORITY_HIGHEST,
 								err_code);
