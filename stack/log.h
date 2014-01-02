@@ -25,7 +25,7 @@
  */
 
 int16_t log_init(void);
-void log_print(const char *format, ...);
+int16_t log_print(const char *format, ...);
 
 #define __ONLYFILE__							\
 	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)

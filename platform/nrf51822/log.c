@@ -59,9 +59,12 @@ static __inline void tx_next_byte(void)
 	app_uart_put(buffer[pos++]);
 }
 
-void log_print(const char *format, ...)
+int16_t log_print(const char *format, ...)
 {
 	va_list args;
+
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
 
 	while (state == BUSY);
 
@@ -74,6 +77,8 @@ void log_print(const char *format, ...)
 	state = BUSY;
 
 	tx_next_byte();
+
+	return 0;
 }
 
 static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
