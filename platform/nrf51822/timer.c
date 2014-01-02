@@ -30,6 +30,7 @@
 #include <nrf51_bitfields.h>
 #include <app_timer.h>
 
+#include "errcodes.h"
 #include "timer.h"
 #include "log.h"
 
@@ -51,7 +52,7 @@ int16_t timer_init(void)
 
 	if (app_timer_init(PRESCALER, MAX_TIMERS, OP_QUEUE_SIZE + 1,
 					APP_TIMER_BUF, NULL) != NRF_SUCCESS)
-		return -1;
+		return -EINTERN;
 
 	return 0;
 }
@@ -59,10 +60,11 @@ int16_t timer_init(void)
 int16_t timer_create(uint8_t type, timer_cb cb)
 {
 	app_timer_mode_t mode;
+	uint32_t err_code;
 	uint32_t id;
 
 	if (cb == NULL)
-		return -1;
+		return -EINVAL;
 
 	switch (type) {
 	case TIMER_SINGLESHOT:
@@ -72,34 +74,64 @@ int16_t timer_create(uint8_t type, timer_cb cb)
 		mode = APP_TIMER_MODE_REPEATED;
 		break;
 	default:
-		return -1;
+		return -EINVAL;
 	}
 
-	if (app_timer_create(&id, mode, cb) != NRF_SUCCESS)
-		return -1;
+	err_code = app_timer_create(&id, mode, cb);
+
+	switch (err_code) {
+	case NRF_ERROR_INVALID_PARAM:
+		return -EINVAL;
+	case NRF_ERROR_INVALID_STATE:
+		return -ENOREADY;
+	case NRF_ERROR_NO_MEM:
+		return -ENOMEM;
+	}
 
 	return id;
 }
 
 int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
 {
+	uint32_t err_code;
 	uint32_t ticks;
+
+	if (id < 0)
+		return -EINVAL;
 
 	ticks = APP_TIMER_TICKS(ms, PRESCALER);
 
-	if (app_timer_start(id, ticks, user_data) != NRF_SUCCESS)
-		return -1;
+	err_code = app_timer_start(id, ticks, user_data);
+
+	switch (err_code) {
+	case NRF_ERROR_INVALID_PARAM:
+		return -EINVAL;
+	case NRF_ERROR_INVALID_STATE:
+		return -ENOREADY;
+	case NRF_ERROR_NO_MEM:
+		return -ENOMEM;
+	}
 
 	return 0;
 }
 
 int16_t timer_stop(int16_t id)
 {
-	if (id < 0)
-		return -1;
+	uint32_t err_code;
 
-	if (app_timer_stop(id) != NRF_SUCCESS)
-		return -1;
+	if (id < 0)
+		return -EINVAL;
+
+	err_code = app_timer_stop(id);
+
+	switch (err_code) {
+	case NRF_ERROR_INVALID_PARAM:
+		return -EINVAL;
+	case NRF_ERROR_INVALID_STATE:
+		return -ENOREADY;
+	case NRF_ERROR_NO_MEM:
+		return -ENOMEM;
+	}
 
 	return 0;
 }
