@@ -116,6 +116,20 @@ int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	return 0;
 }
 
+int16_t radio_stop(void)
+{
+	if (!(status & STATUS_BUSY))
+		return -1;
+
+	NRF_RADIO->EVENTS_DISABLED = 0UL;
+	NRF_RADIO->TASKS_DISABLE = 1UL;
+	while (NRF_RADIO->EVENTS_DISABLED == 0UL);
+
+	status &= ~STATUS_BUSY;
+
+	return 0;
+}
+
 void radio_register_handler(radio_handler hdlr)
 {
 	handler = hdlr;
