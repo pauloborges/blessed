@@ -30,6 +30,7 @@
 #include <nrf51_bitfields.h>
 
 #include "nrf51822.h"
+#include "errcodes.h"
 #include "radio.h"
 
 /* nRF51 Series Reference Manual v1.1, page 71:
@@ -50,12 +51,12 @@ static uint8_t status;
 	do {								\
 		int8_t freq;						\
 		if (!(status & STATUS_INITIALIZED))			\
-			return -1;					\
+			return -ENOREADY;				\
 		if (status & STATUS_BUSY)				\
-			return -1;					\
+			return -EBUSY;					\
 		freq = ch2freq(ch);					\
 		if (freq < 0)						\
-			return -1;					\
+			return -EINVAL;					\
 		NRF_RADIO->DATAWHITEIV = ch & 0x3F;			\
 		NRF_RADIO->FREQUENCY = freq;				\
 		NRF_RADIO->BASE0 = (aa << 8) & 0xFFFFFF00;		\
@@ -115,10 +116,10 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 					const uint8_t *data, uint8_t len)
 {
 	if (len > RADIO_MAX_PDU)
-		return -1;
+		return -EINVAL;
 
 	if (len < RADIO_MIN_PDU)
-		return -1;
+		return -EINVAL;
 
 	COMMON_INITIALIZATION(ch, aa, crcinit);
 
@@ -149,7 +150,7 @@ int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
 int16_t radio_stop(void)
 {
 	if (!(status & STATUS_BUSY))
-		return -1;
+		return -ENOREADY;
 
 	NRF_RADIO->EVENTS_DISABLED = 0UL;
 	NRF_RADIO->TASKS_DISABLE = 1UL;
