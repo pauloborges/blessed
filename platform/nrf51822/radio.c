@@ -39,7 +39,8 @@
 
 #define STATUS_INITIALIZED		1
 #define STATUS_RX			2
-#define STATUS_BUSY			STATUS_RX
+#define STATUS_TX			4
+#define STATUS_BUSY			(STATUS_RX | STATUS_TX)
 
 static radio_handler handler;
 static uint8_t buf[MAX_BUF_LEN];
@@ -91,7 +92,10 @@ void RADIO_IRQHandler(void)
 	old_status = status;
 	status = STATUS_INITIALIZED;
 
-	if ((old_status & STATUS_RX) && handler) {
+	if (handler == NULL)
+		return;
+
+	if (old_status & STATUS_RX) {
 		packet.len = buf[1] + 2;
 		packet.crcstatus = NRF_RADIO->CRCSTATUS;
 
@@ -103,7 +107,33 @@ void RADIO_IRQHandler(void)
 		memcpy(packet.pdu + 2, buf + 3, buf[1]);
 
 		handler(RADIO_EVT_RX_COMPLETED, &packet);
-	}
+	} else if (old_status & STATUS_TX)
+		handler(RADIO_EVT_TX_COMPLETED, NULL);
+}
+
+int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
+					const uint8_t *data, uint8_t len)
+{
+	if (len > RADIO_MAX_PDU)
+		return -1;
+
+	if (len < RADIO_MIN_PDU)
+		return -1;
+
+	COMMON_INITIALIZATION(ch, aa, crcinit);
+
+	/* Disassemble ADV PDU header into S0, LENGTH and S1 fields */
+	buf[0] = data[0];
+	buf[1] = data[1] & 0x3F;
+	buf[2] = (data[1] >> 6) & 0x3;
+
+	/* Copy ADV PDU payload */
+	memcpy(buf + 3, data + 2, len - 2);
+
+	NRF_RADIO->TASKS_TXEN = 1UL;
+	status |= STATUS_TX;
+
+	return 0;
 }
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
