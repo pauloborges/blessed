@@ -1,0 +1,8 @@
+HOW TO BUILD EXAMPLES
+=====================
+
+Every example has a dedicated folder inside `examples` directory. To build an
+example, you must execute `make` specifying the target platform. For example:
+
+	$ cd examples/some-example
+	$ make PLATFORM=my-platform
