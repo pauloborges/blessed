@@ -1,0 +1,91 @@
+# Makefile for nRF51822 platform
+
+# FIXME: Hardcoded path
+NRF51_SDK_PATH		= /home/borges/workspace/bless/nrf51-sdk
+JLINK_PATH		= /home/borges/workspace/bless/nrf51-sdk/JLink_Linux_V474
+
+ifeq ($(DEVICE_FAMILY),)
+	DEVICE_FAMILY = NRF51
+endif
+
+ifeq ($(CPU),)
+	CPU = cortex-m0
+endif
+
+ifeq ($(SOC),)
+	SOC = NRF51822_QFAA_CA
+endif
+
+ifeq ($(SOC_VARIANT),)
+	SOC_VARIANT = xxaa
+endif
+
+ifeq ($(BOARD),)
+	BOARD = BOARD_PCA10001
+endif
+
+ifeq ($(HEAP_SIZE),)
+	HEAP_SIZE = 0
+endif
+
+ifeq ($(STACK_SIZE),)
+	STACK_SIZE = 1024
+endif
+
+CC			= arm-none-eabi-gcc
+LD			= arm-none-eabi-gcc
+OBJCOPY			= arm-none-eabi-objcopy
+OBJDUMP			= arm-none-eabi-objdump
+FLASHER			= python $(PLATFORM_PATH)/flasher/flasher.py
+
+SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Include
+SDK_SOURCE_PATH		= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source
+SDK_TEMPLATE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source/templates
+
+PLATFORM_INCLUDE_PATHS	= $(SDK_INCLUDE_PATH)				\
+			  $(SDK_INCLUDE_PATH)/gcc			\
+			  $(SDK_INCLUDE_PATH)/app_common		\
+			  $(SDK_INCLUDE_PATH)/ble/softdevice		\
+			  $(PLATFORM_PATH)
+
+PLATFORM_CFLAGS		= -mcpu=$(CPU)					\
+			  -D$(DEVICE_FAMILY)				\
+			  -D$(BOARD)					\
+			  -D$(SOC)					\
+			  -mfloat-abi=soft				\
+			  --std=gnu99					\
+			  -mthumb					\
+			  -Werror					\
+			  -Wall						\
+			  -c
+
+PLATFORM_ASMFLAGS	= $(PLATFORM_CFLAGS)				\
+			  -x assembler-with-cpp				\
+			  -D__HEAP_SIZE=$(HEAP_SIZE)			\
+			  -D__STACK_SIZE=$(STACK_SIZE)
+
+LINKER_SCRIPT		= gcc_nrf51_blank_$(SOC_VARIANT).ld
+PLATFORM_LDFLAGS	= -T$(SDK_TEMPLATE_PATH)/gcc/$(LINKER_SCRIPT)	\
+			  -L$(SDK_TEMPLATE_PATH)/gcc			\
+			  --specs=nano.specs				\
+			  -mabi=aapcs					\
+			  -Xlinker					\
+			  -Map=$(BUILD_PATH)/$(PROJECT_TARGET).map	\
+			  -mthumb					\
+			  -mcpu=$(CPU)
+
+PLATFORM_SOURCE_PATHS	= $(SDK_SOURCE_PATH)				\
+			  $(SDK_SOURCE_PATH)/simple_uart		\
+			  $(SDK_SOURCE_PATH)/nrf_delay			\
+			  $(SDK_TEMPLATE_PATH)				\
+			  $(SDK_TEMPLATE_PATH/gcc)			\
+			  $(PLATFORM_PATH)
+
+PLATFORM_SOURCE_FILES	= system_nrf51.c
+
+PLATFORM_ASM_PATHS	= $(SDK_TEMPLATE_PATH)/gcc
+
+PLATFORM_ASM_FILES	= gcc_startup_nrf51.s
+
+export JLINK_PATH
+export BUILD_PATH
