@@ -41,3 +41,4 @@ int16_t radio_init(void);
 void radio_register_handler(radio_handler hdlr);
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
+int16_t radio_stop(void);
