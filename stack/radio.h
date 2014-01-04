@@ -27,4 +27,7 @@
 /* Link Layer specification Section 2.1, Core 4.1 page 2503 */
 #define RADIO_MAX_PDU			39
 
+typedef void (*radio_handler) (uint8_t evt, void *data);
+
 int16_t radio_init(void);
+void radio_register_handler(radio_handler hdlr);
