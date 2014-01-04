@@ -26,8 +26,10 @@
 
 /* Link Layer specification Section 2.1, Core 4.1 page 2503 */
 #define RADIO_MAX_PDU			39
+#define RADIO_MIN_PDU			2
 
 #define RADIO_EVT_RX_COMPLETED		1
+#define RADIO_EVT_TX_COMPLETED		2
 
 struct radio_packet {
 	uint8_t pdu[RADIO_MAX_PDU];
@@ -41,4 +43,6 @@ int16_t radio_init(void);
 void radio_register_handler(radio_handler hdlr);
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
+int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
+					const uint8_t *data, uint8_t len);
 int16_t radio_stop(void);
