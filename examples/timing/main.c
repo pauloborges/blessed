@@ -35,6 +35,7 @@
 
 uint16_t counter = 0;
 uint16_t timer_data = 0;
+
 int16_t timer1;
 int16_t timer2;
 
@@ -56,8 +57,11 @@ int main(void)
 	log_init();
 	timer_init();
 
-	timer1 = timer_start(TIMER_REPEATED, TIMER1_MS, timeout1, NULL);
-	timer2 = timer_start(TIMER_REPEATED, TIMER2_MS, timeout2, &timer_data);
+	timer1 = timer_create(TIMER_REPEATED, timeout1);
+	timer2 = timer_create(TIMER_REPEATED, timeout2);
+
+	timer_start(timer1, TIMER1_MS, NULL);
+	timer_start(timer2, TIMER2_MS, &timer_data);
 
 	while (1);
 

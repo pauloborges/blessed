@@ -24,6 +24,8 @@
  *  SOFTWARE.
  */
 
+#include <string.h>
+
 #include <nrf51.h>
 #include <nrf51_bitfields.h>
 #include <app_timer.h>
@@ -54,10 +56,9 @@ int16_t timer_init(void)
 	return 0;
 }
 
-int16_t timer_start(uint8_t type, uint32_t ms, timer_cb cb, void *user_data)
+int16_t timer_create(uint8_t type, timer_cb cb)
 {
 	app_timer_mode_t mode;
-	uint32_t ticks;
 	uint32_t id;
 
 	if (cb == NULL)
@@ -77,12 +78,19 @@ int16_t timer_start(uint8_t type, uint32_t ms, timer_cb cb, void *user_data)
 	if (app_timer_create(&id, mode, cb) != NRF_SUCCESS)
 		return -1;
 
+	return id;
+}
+
+int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
+{
+	uint32_t ticks;
+
 	ticks = APP_TIMER_TICKS(ms, PRESCALER);
 
 	if (app_timer_start(id, ticks, user_data) != NRF_SUCCESS)
 		return -1;
 
-	return id;
+	return 0;
 }
 
 int16_t timer_stop(int16_t id)
