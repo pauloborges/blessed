@@ -85,9 +85,11 @@ PLATFORM_SOURCE_FILES	= system_nrf51.c				\
 			  app_uart.c					\
 			  app_fifo.c					\
 			  app_gpiote.c					\
+			  app_timer.c					\
 			  nrf_delay.c					\
 			  nrf51822.c					\
-			  log.c
+			  log.c						\
+			  timer.c
 
 PLATFORM_ASM_PATHS	= $(SDK_TEMPLATE_PATH)/gcc
 
