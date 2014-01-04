@@ -99,7 +99,7 @@ int16_t log_init(void)
 		UART_BAUDRATE_BAUDRATE_Baud115200
 	};
 
-	APP_UART_INIT(&params, 0, 0, uart_evt_handler, IRQ_PRIORITY_MEDIUM,
+	APP_UART_INIT(&params, 0, 0, uart_evt_handler, IRQ_PRIORITY_HIGHEST,
 								err_code);
 
 	if (err_code != NRF_SUCCESS)
