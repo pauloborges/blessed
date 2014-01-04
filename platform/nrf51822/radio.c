@@ -24,9 +24,69 @@
  *  SOFTWARE.
  */
 
+#include <string.h>
+
+#include <nrf51.h>
+#include <nrf51_bitfields.h>
+
+#include "nrf51822.h"
 #include "radio.h"
+
+/* nRF51 Series Reference Manual v1.1, page 71:
+ * S0, LENGTH and S1 occupies 3 bytes in memory, not 2
+ */
+#define MAX_BUF_LEN			(RADIO_MAX_PDU + 1)
+
+static uint8_t buf[MAX_BUF_LEN];
+
+void RADIO_IRQHandler(void)
+{
+	NRF_RADIO->EVENTS_END = 0UL;
+}
+
 
 int16_t radio_init(void)
 {
+	if (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL) {
+		NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
+		while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL);
+	}
+
+	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
+
+	NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_0dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+
+	NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Enabled
+						<< RADIO_PCNF1_WHITEEN_Pos)
+				| (MAX_BUF_LEN << RADIO_PCNF1_MAXLEN_Pos)
+				| (3UL << RADIO_PCNF1_BALEN_Pos);
+
+	NRF_RADIO->RXADDRESSES = 1UL;
+	NRF_RADIO->TXADDRESS = 0UL;
+
+	NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
+		(RADIO_CRCCNF_SKIP_ADDR_Skip << RADIO_CRCCNF_SKIP_ADDR_Pos);
+	NRF_RADIO->CRCPOLY = 0x100065B;
+
+	/* FIXME: These header sizes only works for advertise channel PDUs */
+	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos) |      /* 1 byte */
+				(6UL << RADIO_PCNF0_LFLEN_Pos) | /* 6 bits */
+				(2UL << RADIO_PCNF0_S1LEN_Pos);  /* 2 bits */
+
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled
+					<< RADIO_SHORTS_READY_START_Pos)
+					| (RADIO_SHORTS_END_DISABLE_Enabled
+					<< RADIO_SHORTS_END_DISABLE_Pos);
+
+	NRF_RADIO->INTENSET = RADIO_INTENSET_END_Msk;
+
+	NVIC_SetPriority(RADIO_IRQn, IRQ_PRIORITY_HIGH);
+	NVIC_ClearPendingIRQ(RADIO_IRQn);
+	NVIC_EnableIRQ(RADIO_IRQn);
+
+	NRF_RADIO->PACKETPTR = (uint32_t) buf;
+	memset(buf, 0, sizeof(buf));
+
 	return 0;
 }

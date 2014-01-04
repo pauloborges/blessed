@@ -24,4 +24,7 @@
  *  SOFTWARE.
  */
 
+/* Link Layer specification Section 2.1, Core 4.1 page 2503 */
+#define RADIO_MAX_PDU			39
+
 int16_t radio_init(void);
