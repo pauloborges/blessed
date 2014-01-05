@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "errcodes.h"
 #include "log.h"
 #include "radio.h"
 #include "timer.h"
@@ -121,7 +122,7 @@ static void t_adv_pdu_cb(void *user_data)
 int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 {
 	if (current_state != LL_STATE_STANDBY)
-		return -1;
+		return -ENOREADY;
 
 	memset(&pdu_adv, 0, sizeof(pdu_adv));
 
@@ -144,7 +145,7 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 	case LL_ADV_CONN_UNDIR:
 	case LL_ADV_CONN_DIR:
 		/* Not implemented */
-		return -1;
+		return -EINVAL;
 		break;
 	}
 
@@ -166,7 +167,7 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 int16_t ll_advertise_stop()
 {
 	if (current_state != LL_STATE_ADVERTISING)
-		return -1;
+		return -ENOREADY;
 
 	timer_stop(t_adv_pdu);
 	timer_stop(t_adv_event);
