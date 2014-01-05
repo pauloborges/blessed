@@ -1,5 +1,6 @@
 Makefile.config
 build
+config.h
 *.log
 *.pyc
 *.sublime-project
