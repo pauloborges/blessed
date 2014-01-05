@@ -24,7 +24,8 @@ endif
 
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 			  $(PROJECT_INCLUDE_PATHS)			\
-			  $(BLESTACK_PATH)/stack
+			  $(BLESTACK_PATH)/stack			\
+			  .
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 
