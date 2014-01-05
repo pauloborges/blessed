@@ -24,9 +24,12 @@
  *  SOFTWARE.
  */
 
+#include <stdint.h>
+
+#include "ble-common.h"
 #include "bci.h"
 
-int bci_init(void)
+int16_t bci_init(bdaddr_t *addr)
 {
 	return 0;
 }

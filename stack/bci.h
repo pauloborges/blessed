@@ -24,4 +24,4 @@
  *  SOFTWARE.
  */
 
-int bci_init(void);
+int16_t bci_init(bdaddr_t *addr);
