@@ -36,16 +36,16 @@
 #include "ll.h"
 
 /* Link Layer specification Section 2.1, Core 4.1 page 2503 */
-#define LL_MTU			39
+#define LL_MTU				39
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
-#define LL_MTU_ADV		37
+#define LL_MTU_ADV			37
 
 /* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
-#define LL_ACCESS_ADDRESS_ADV	0x8E89BED6
+#define LL_ACCESS_ADDRESS_ADV		0x8E89BED6
 
 /* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
-#define LL_CRCINIT_ADV		0x555555
+#define LL_CRCINIT_ADV			0x555555
 
 /* TODO:
  * 1. Create a config.h for address and address type;
