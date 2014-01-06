@@ -45,7 +45,7 @@
 #define LL_ACCESS_ADDRESS_ADV	0x8E89BED6
 
 /* TODO: doc */
-#define LL_CRC_ADV		0x555555
+#define LL_CRCINIT_ADV		0x555555
 
 /* TODO:
  * 1. Create a config.h for address and address type;
@@ -104,7 +104,7 @@ static void t_adv_event_cb(void *user_data)
 {
 	adv_ch_idx = 0;
 
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
 
 	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
@@ -112,7 +112,7 @@ static void t_adv_event_cb(void *user_data)
 
 static void t_adv_pdu_cb(void *user_data)
 {
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
 
 	if (adv_ch_idx < 3)
@@ -158,7 +158,7 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 	timer_start(t_adv_event, t_adv_event_interval, NULL);
 	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
 
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRC_ADV,
+	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
 
 	return 0;
