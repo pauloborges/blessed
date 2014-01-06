@@ -33,6 +33,7 @@
 #include "radio.h"
 #include "timer.h"
 
+#include "ble-common.h"
 #include "ll.h"
 
 /* Link Layer specification Section 2.1, Core 4.1 page 2503 */
@@ -46,16 +47,6 @@
 
 /* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
 #define LL_CRCINIT_ADV			0x555555
-
-/* TODO:
- * 1. Create a config.h for address and address type;
- * 1.1. Create enum type for address type;
- */
-
-static struct {
-	uint8_t address[6];
-	uint8_t address_type;
-} config = { {0xFE, 0xCA, 0xFE, 0xCA, 0xBA, 0xBE}, 0};
 
 /* Link Layer specification Section 1.1, Core 4.1 page 2499 */
 typedef enum ll_states {
@@ -88,6 +79,7 @@ typedef struct ll_pdu_adv {
 	uint8_t payload[LL_MTU_ADV];
 } __attribute__ ((packed)) ll_pdu_adv_t;
 
+static const bdaddr_t *laddr;
 static ll_states_t current_state;
 
 static uint8_t adv_chs[] = { 37, 38, 39 };
@@ -130,11 +122,11 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 
 	case LL_ADV_NONCONN_UNDIR:
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-		pdu_adv.tx_add = config.address_type;
-		pdu_adv.length = len + sizeof(config.address);
+		pdu_adv.tx_add = laddr->type;
+		pdu_adv.length = len + sizeof(laddr->addr);
 
-		memcpy(pdu_adv.payload, config.address, sizeof(config.address));
-		memcpy(pdu_adv.payload + sizeof(config.address), data, len);
+		memcpy(pdu_adv.payload, laddr->addr, sizeof(laddr->addr));
+		memcpy(pdu_adv.payload + sizeof(laddr->addr), data, len);
 
 		t_adv_event_interval = 100; /* <= 1024ms, Sec 4.4.2.2 pag 2528 */
 		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
@@ -177,12 +169,16 @@ int16_t ll_advertise_stop()
 	return 0;
 }
 
-int16_t ll_init(void)
+int16_t ll_init(const bdaddr_t *addr)
 {
+	if (addr == NULL)
+		return -EINVAL;
+
 	log_init();
 	timer_init();
 	radio_init();
 
+	laddr = addr;
 	current_state = LL_STATE_STANDBY;
 
 	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);

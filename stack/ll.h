@@ -32,7 +32,7 @@ typedef enum ll_adv_type {
 	LL_ADV_CONN_DIR		/* connectable directed */
 } ll_adv_type_t;
 
-int16_t ll_init(void);
+int16_t ll_init(const bdaddr_t *addr);
 
 int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len);
 int16_t ll_advertise_stop(void);
