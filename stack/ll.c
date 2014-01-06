@@ -44,7 +44,7 @@
 /* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
 #define LL_ACCESS_ADDRESS_ADV	0x8E89BED6
 
-/* TODO: doc */
+/* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
 #define LL_CRCINIT_ADV		0x555555
 
 /* TODO:
