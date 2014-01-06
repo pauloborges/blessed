@@ -130,7 +130,7 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 
 	case LL_ADV_NONCONN_UNDIR:
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-		pdu_adv.tx_add = config.address_type == 0 ? 0 : 1;
+		pdu_adv.tx_add = config.address_type;
 		pdu_adv.length = len + sizeof(config.address);
 
 		memcpy(pdu_adv.payload, config.address, sizeof(config.address));
