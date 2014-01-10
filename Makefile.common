@@ -45,7 +45,8 @@ SOURCE_PATHS		= $(PLATFORM_SOURCE_PATHS)			\
 
 SOURCE_FILES		= $(PLATFORM_SOURCE_FILES)			\
 			  $(PROJECT_SOURCE_FILES)			\
-			  ll.c
+			  ll.c						\
+			  bci.c
 
 ASM_PATHS		= $(PLATFORM_ASM_PATHS)				\
 			  $(PROJECT_ASM_PATHS)
