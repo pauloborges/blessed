@@ -111,7 +111,7 @@ static void t_adv_pdu_cb(void *user_data)
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
 }
 
-int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
+int16_t ll_advertise_start(adv_type_t type, uint8_t *data, uint8_t len)
 {
 	if (current_state != LL_STATE_STANDBY)
 		return -ENOREADY;
@@ -120,7 +120,7 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 
 	switch (type) {
 
-	case LL_ADV_NONCONN_UNDIR:
+	case ADV_NONCONN_UNDIR:
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
 		pdu_adv.tx_add = laddr->type;
 		pdu_adv.length = len + sizeof(laddr->addr);
@@ -133,9 +133,10 @@ int16_t ll_advertise_start(ll_adv_type_t type, uint8_t *data, uint8_t len)
 
 		break;
 
-	case LL_ADV_SCAN_UNDIR:
-	case LL_ADV_CONN_UNDIR:
-	case LL_ADV_CONN_DIR:
+	case ADV_CONN_UNDIR:
+	case ADV_CONN_DIR_HIGH:
+	case ADV_SCAN_UNDIR:
+	case ADV_CONN_DIR_LOW:
 		/* Not implemented */
 		return -EINVAL;
 		break;
