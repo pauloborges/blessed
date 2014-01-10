@@ -54,6 +54,14 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 	return 0;
 }
 
+int16_t bci_set_advertise_enable(uint8_t enable)
+{
+	if (!enable)
+		return ll_advertise_stop();
+
+	return ll_advertise_start(ADV_NONCONN_UNDIR, adv_data, sizeof(adv_data));
+}
+
 int16_t bci_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
