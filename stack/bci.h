@@ -25,3 +25,5 @@
  */
 
 int16_t bci_init(const bdaddr_t *addr);
+
+int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);

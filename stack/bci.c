@@ -25,6 +25,8 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "errcodes.h"
 #include "ble-common.h"
@@ -32,6 +34,25 @@
 #include "ll.h"
 
 static const bdaddr_t *laddr;
+static uint8_t adv_data[ADVDATA_LEN];
+
+int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
+{
+	if (data == NULL)
+		return -EINVAL;
+
+	if (len > ADVDATA_LEN)
+		return -EINVAL;
+
+	memset(adv_data, 0, ADVDATA_LEN);
+	memcpy(adv_data, data, len);
+
+	/* XXX: If the radio is already advertising, the advertising data
+	 * should be refreshed? If yes, then we need to notify the link layer.
+	 */
+
+	return 0;
+}
 
 int16_t bci_init(const bdaddr_t *addr)
 {

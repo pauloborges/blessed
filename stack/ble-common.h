@@ -37,6 +37,8 @@ typedef struct bdaddr {
 	uint8_t type;
 } bdaddr_t;
 
+#define ADVDATA_LEN			31
+
 /* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
 typedef enum adv_type {
 	ADV_CONN_UNDIR,		/* connectable undirected */
