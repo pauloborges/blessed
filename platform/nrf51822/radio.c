@@ -161,6 +161,46 @@ int16_t radio_stop(void)
 	return 0;
 }
 
+int16_t radio_set_tx_power(radio_power_t power)
+{
+	switch(power) {
+	case RADIO_POWER_4_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Pos4dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_0_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_0dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N4_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg4dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N8_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg8dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N12_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg12dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N16_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg16dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N20_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg20dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	case RADIO_POWER_N30_DBM:
+		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Neg30dBm
+						<< RADIO_TXPOWER_TXPOWER_Pos;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 void radio_register_handler(radio_handler hdlr)
 {
 	handler = hdlr;
@@ -174,9 +214,6 @@ int16_t radio_init(void)
 	}
 
 	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
-
-	NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_0dBm
-						<< RADIO_TXPOWER_TXPOWER_Pos;
 
 	NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Enabled
 						<< RADIO_PCNF1_WHITEEN_Pos)
@@ -205,6 +242,8 @@ int16_t radio_init(void)
 	NVIC_SetPriority(RADIO_IRQn, IRQ_PRIORITY_HIGH);
 	NVIC_ClearPendingIRQ(RADIO_IRQn);
 	NVIC_EnableIRQ(RADIO_IRQn);
+
+	radio_set_tx_power(RADIO_POWER_0_DBM);
 
 	NRF_RADIO->PACKETPTR = (uint32_t) buf;
 	memset(buf, 0, sizeof(buf));
