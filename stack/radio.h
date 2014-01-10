@@ -31,6 +31,17 @@
 #define RADIO_EVT_RX_COMPLETED		1
 #define RADIO_EVT_TX_COMPLETED		2
 
+typedef enum radio_power {
+	RADIO_POWER_4_DBM,
+	RADIO_POWER_0_DBM,
+	RADIO_POWER_N4_DBM,
+	RADIO_POWER_N8_DBM,
+	RADIO_POWER_N12_DBM,
+	RADIO_POWER_N16_DBM,
+	RADIO_POWER_N20_DBM,
+	RADIO_POWER_N30_DBM
+} radio_power_t;
+
 struct radio_packet {
 	uint8_t pdu[RADIO_MAX_PDU];
 	uint8_t len;
@@ -46,3 +57,5 @@ int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 					const uint8_t *data, uint8_t len);
 int16_t radio_stop(void);
+
+int16_t radio_set_tx_power(radio_power_t power);
