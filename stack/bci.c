@@ -26,10 +26,28 @@
 
 #include <stdint.h>
 
+#include "errcodes.h"
 #include "ble-common.h"
 #include "bci.h"
+#include "ll.h"
 
-int16_t bci_init(bdaddr_t *addr)
+static const bdaddr_t *laddr;
+
+int16_t bci_init(const bdaddr_t *addr)
 {
+	int16_t err_code;
+
+	if (addr == NULL || (addr->type != BDADDR_TYPE_PUBLIC &&
+					addr->type != BDADDR_TYPE_RANDOM))
+		return -EINVAL;
+
+	/* TODO: check bdaddr->addr */
+
+	err_code = ll_init(addr);
+	if (err_code != 0)
+		return err_code;
+
+	laddr = addr;
+
 	return 0;
 }

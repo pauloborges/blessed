@@ -28,6 +28,9 @@
 
 #define BDADDR_LEN			6
 
+#define BDADDR_TYPE_PUBLIC		0
+#define BDADDR_TYPE_RANDOM		1
+
 /* Link Layer specification Section 1.4, Core 4.1 page 2501 */
 typedef struct bdaddr {
 	uint8_t addr[BDADDR_LEN];
