@@ -2,7 +2,6 @@
 
 # FIXME: Hardcoded path
 NRF51_SDK_PATH		= /home/borges/workspace/bless/nrf51-sdk
-JLINK_PATH		= /home/borges/workspace/bless/nrf51-sdk/JLink_Linux_V474
 
 ifeq ($(DEVICE_FAMILY),)
 	DEVICE_FAMILY = NRF51
@@ -38,7 +37,7 @@ AR			= arm-none-eabi-ar
 SIZE			= arm-none-eabi-size
 OBJCOPY			= arm-none-eabi-objcopy
 OBJDUMP			= arm-none-eabi-objdump
-FLASHER			= python $(PLATFORM_PATH)/flasher/flasher.py
+FLASHER			= nrftool
 
 SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Include
 SDK_SOURCE_PATH		= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source
@@ -97,6 +96,3 @@ PLATFORM_SOURCE_FILES	= system_nrf51.c				\
 PLATFORM_ASM_PATHS	= $(SDK_TEMPLATE_PATH)/gcc
 
 PLATFORM_ASM_FILES	= gcc_startup_nrf51.s
-
-export JLINK_PATH
-export BUILD_PATH

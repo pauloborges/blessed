@@ -1,8 +1,0 @@
-device nrf51822
-speed 1000
-w4 4001e504 1
-loadbin {program} {addr}
-sleep 100
-r
-g
-q
