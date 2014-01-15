@@ -34,6 +34,7 @@ endif
 
 CC			= arm-none-eabi-gcc
 LD			= arm-none-eabi-gcc
+AR			= arm-none-eabi-ar
 OBJCOPY			= arm-none-eabi-objcopy
 OBJDUMP			= arm-none-eabi-objdump
 FLASHER			= python $(PLATFORM_PATH)/flasher/flasher.py

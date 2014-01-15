@@ -1,12 +1,8 @@
-# Common Makefile
+# Common Makefile to build applications
 
 # If BLESTACK_PATH isn't defined, assume Makefile.common was the last inclusion
 ifeq ($(BLESTACK_PATH),)
 	BLESTACK_PATH = $(patsubst %\,%,$(dir $(lastword $(MAKEFILE_LIST))))
-endif
-
-ifeq ($(BUILD_PATH),)
-	BUILD_PATH = build
 endif
 
 -include Makefile.config
@@ -22,10 +18,13 @@ ifeq ($(PROJECT_TARGET),)
         $(error PROJECT_TARGET is not defined)
 endif
 
+BUILD_PATH		= build
+BLESTACK_BUILD		= $(BLESTACK_PATH)/$(BUILD_PATH)
+LIBBLESTACK		= $(BLESTACK_BUILD)/libblestack.a
+
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 			  $(PROJECT_INCLUDE_PATHS)			\
-			  $(BLESTACK_PATH)/stack			\
-			  .
+			  $(BLESTACK_PATH)/stack
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 
@@ -33,29 +32,16 @@ CFLAGS			= $(PLATFORM_CFLAGS)				\
 			  $(PROJECT_CFLAGS)				\
 			  $(INCLUDES)
 
-ASMFLAGS		= $(PLATFORM_ASMFLAGS)				\
-			  $(PROJECT_ASMFLAGS)
-
 LDFLAGS			= $(PLATFORM_LDFLAGS)				\
 			  $(PROJECT_LDFLAGS)
 
-SOURCE_PATHS		= $(PLATFORM_SOURCE_PATHS)			\
-			  $(PROJECT_SOURCE_PATHS)			\
-			  $(BLESTACK_PATH)/stack
+SOURCE_PATHS		= $(PROJECT_SOURCE_PATHS)
+SOURCE_FILES		= $(PROJECT_SOURCE_FILES)
+ASM_PATHS		= $(PROJECT_ASM_PATHS)
+ASM_FILES		= $(PROJECT_ASM_FILES)
 
-SOURCE_FILES		= $(PLATFORM_SOURCE_FILES)			\
-			  $(PROJECT_SOURCE_FILES)			\
-			  ll.c						\
-			  bci.c
-
-ASM_PATHS		= $(PLATFORM_ASM_PATHS)				\
-			  $(PROJECT_ASM_PATHS)
-
-ASM_FILES		= $(PLATFORM_ASM_FILES)				\
-			  $(PROJECT_ASM_FILES)
-
-C_OBJECT_FILES		= $(addprefix $(BUILD_PATH)/, $(SOURCE_FILES:.c=.o))
-ASM_OBJECT_FILES	= $(addprefix $(BUILD_PATH)/, $(ASM_FILES:.s=.o))
+C_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(SOURCE_FILES:.c=.o))
+ASM_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(ASM_FILES:.s=.o))
 
 vpath %.c $(SOURCE_PATHS)
 vpath %.s $(ASM_PATHS)
@@ -67,19 +53,16 @@ $(BUILD_PATH)/$(PROJECT_TARGET).bin: $(BUILD_PATH)/$(PROJECT_TARGET).out
 	@$(OBJCOPY) -Obinary	$(BUILD_PATH)/$(PROJECT_TARGET).out	\
 				$(BUILD_PATH)/$(PROJECT_TARGET).bin
 
-# Link object files
-$(BUILD_PATH)/$(PROJECT_TARGET).out: $(C_OBJECT_FILES) $(ASM_OBJECT_FILES)
+$(BUILD_PATH)/$(PROJECT_TARGET).out: $(C_OBJ_FILES) $(ASM_OBJ_FILES)
 	@echo "  LD\t$@"
-	@$(LD) $(LDFLAGS) $(C_OBJECT_FILES) $(ASM_OBJECT_FILES) -o $@
+	@$(LD) $(LDFLAGS) $(C_OBJ_FILES) $(ASM_OBJ_FILES) $(LIBBLESTACK) -o $@
 	@echo "OBJDUMP\t$@"
 	@$(OBJDUMP) -h $@
 
-# Build source files
 $(BUILD_PATH)/%.o: %.c
 	@echo "  CC\t$<"
 	@$(CC) $(CFLAGS) -o $@ $<
 
-# Build ASM files
 $(BUILD_PATH)/%.o: %.s
 	@echo "  CC\t$<"
 	@$(CC) $(ASMFLAGS) -o $@ $<
@@ -89,26 +72,15 @@ $(BUILD_PATH):
 	@-mkdir $@
 
 install: all
-	$(FLASHER) flash `pwd`/$(BUILD_PATH)/$(PROJECT_TARGET).bin
+	@echo "INSTALL\t$(PROJECT_TARGET)"
+	@$(FLASHER) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 erase:
-	$(FLASHER) erase
+	@echo " ERASE"
+	@$(FLASHER) erase
 
 clean:
 	@echo " CLEAN"
 	@rm -rf $(BUILD_PATH) *.log
 
-dump:
-	@echo ""
-	@echo "INCLUDE_PATHS: $(INCLUDE_PATHS)"
-	@echo ""
-	@echo "SOURCE_PATHS: $(SOURCE_PATHS)"
-	@echo ""
-	@echo "ASM_PATHS: $(ASM_PATHS)"
-	@echo ""
-	@echo "SOURCE_FILES: $(SOURCE_FILES)"
-	@echo ""
-	@echo "ASM_FILES: $(ASM_FILES)"
-	@echo ""
-
-.PHONY: all install erase clean dump
+.PHONY: all install erase clean
