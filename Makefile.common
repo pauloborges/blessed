@@ -73,11 +73,11 @@ $(BUILD_PATH):
 
 install: all
 	@echo "INSTALL\t$(PROJECT_TARGET)"
-	@$(FLASHER) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
+	@$(PROGRAMMER) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 erase:
 	@echo " ERASE"
-	@$(FLASHER) erase
+	@$(PROGRAMMER) erase
 
 clean:
 	@echo " CLEAN"

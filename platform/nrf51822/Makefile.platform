@@ -37,7 +37,7 @@ AR			= arm-none-eabi-ar
 SIZE			= arm-none-eabi-size
 OBJCOPY			= arm-none-eabi-objcopy
 OBJDUMP			= arm-none-eabi-objdump
-FLASHER			= nrftool
+PROGRAMMER		= nrftool
 
 SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Include
 SDK_SOURCE_PATH		= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source
