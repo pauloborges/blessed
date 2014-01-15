@@ -56,8 +56,8 @@ $(BUILD_PATH)/$(PROJECT_TARGET).bin: $(BUILD_PATH)/$(PROJECT_TARGET).out
 $(BUILD_PATH)/$(PROJECT_TARGET).out: $(C_OBJ_FILES) $(ASM_OBJ_FILES)
 	@echo "  LD\t$@"
 	@$(LD) $(LDFLAGS) $(C_OBJ_FILES) $(ASM_OBJ_FILES) $(LIBBLESTACK) -o $@
-	@echo "OBJDUMP\t$@"
-	@$(OBJDUMP) -h $@
+	@echo " SIZE\t$@"
+	@$(SIZE) $@
 
 $(BUILD_PATH)/%.o: %.c
 	@echo "  CC\t$<"

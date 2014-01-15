@@ -46,6 +46,8 @@ all: $(BUILD_PATH) $(LIB_TARGET)
 $(LIB_TARGET): $(C_OBJ_FILES) $(ASM_OBJ_FILES)
 	@echo "  AR\t$@"
 	@$(AR) $(ARFLAGS) $@ $(C_OBJ_FILES) $(ASM_OBJ_FILES) > /dev/null 2>&1
+	@echo " SIZE\t$@"
+	@$(SIZE) $@
 
 $(BUILD_PATH)/%.o: %.c
 	@echo "  CC\t$<"
