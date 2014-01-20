@@ -24,6 +24,13 @@
  *  SOFTWARE.
  */
 
+/* http://www.disca.upv.es/aperles/arm_cortex_m3/curset/CMSIS/Documentation/Core/html/group___n_v_i_c__gr.html
+ * nRF51 Series Reference Manual v2.1, Exception (interrupt) management
+ * with a SoftDevice, page 190
+ *
+ * Cortex-M0 has a maximum theorical value of 193 interrupt levels, but the
+ * Nordic implementation has only 4 interrupt levels available.
+ */
 #define IRQ_PRIORITY_HIGHEST		0
 #define IRQ_PRIORITY_HIGH		1
 #define IRQ_PRIORITY_MEDIUM		2
