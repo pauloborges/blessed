@@ -32,16 +32,23 @@
 
 #define TIMER1_MS			1000
 #define TIMER2_MS			250
+#define TIMER3_MS			10000
 
 uint16_t counter = 0;
 uint16_t timer_data = 0;
 
 int16_t timer1;
 int16_t timer2;
+int16_t timer3;
 
 void timeout1(void *user_data)
 {
 	DBG("%u second(s)", ++counter);
+
+	if (counter == 5) {
+		DBG("timer1 stopped");
+		timer_stop(timer1);
+	}
 }
 
 void timeout2(void *user_data)
@@ -52,6 +59,11 @@ void timeout2(void *user_data)
 	DBG("Data: %u", *data);
 }
 
+void timeout3(void *user_data)
+{
+	DBG("singleshot timer after %d seconds", TIMER3_MS / 1000);
+}
+
 int main(void)
 {
 	log_init();
@@ -59,9 +71,11 @@ int main(void)
 
 	timer1 = timer_create(TIMER_REPEATED, timeout1);
 	timer2 = timer_create(TIMER_REPEATED, timeout2);
+	timer3 = timer_create(TIMER_SINGLESHOT, timeout3);
 
 	timer_start(timer1, TIMER1_MS, NULL);
 	timer_start(timer2, TIMER2_MS, &timer_data);
+	timer_start(timer3, TIMER3_MS, NULL);
 
 	while (1);
 
