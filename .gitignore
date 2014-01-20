@@ -1,6 +1,10 @@
 Makefile.config
-build
 config.h
+*.o
+*.a
+*.bin
+*.out
+*.map
 *.log
 *.pyc
 *.sublime-project
