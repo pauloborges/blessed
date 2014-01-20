@@ -34,10 +34,20 @@
 #include "timer.h"
 #include "log.h"
 
+/* nRF51 Series Reference Manual, section 18.1.2, page 101
+ *
+ * Prescaler for the Real Timer Counter (RTC). The prescaler defines the RTC
+ * frequency. With 0, the RTC frequency assumes the maximum possible value:
+ * 32768 kHz.
+ */
 #define PRESCALER			0
+
 #define MAX_TIMERS			4
 #define OP_QUEUE_SIZE			7
 
+/* Defines a buffer where both timers and timer operations will be stored.
+ * This definition comes from app_timer.h.
+ */
 static uint32_t APP_TIMER_BUF[CEIL_DIV(APP_TIMER_BUF_SIZE(MAX_TIMERS,
 				OP_QUEUE_SIZE + 1), sizeof(uint32_t))];
 
