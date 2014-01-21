@@ -130,12 +130,22 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 
 	COMMON_INITIALIZATION(ch, aa, crcinit);
 
-	/* Disassemble ADV PDU header into S0, LENGTH and S1 fields */
+	/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
+	 * Link Layer specification section 2.3, Core 4.1, page 2504
+	 * Link Layer specification section 2.4, Core 4.1, page 2511
+	 *
+	 * Disassemble PDU headers into S0, LENGTH and S1 fields. The nRF51822
+	 * stores these fields in separate bytes, even if they are smaller than
+	 * one byte. So it is necessary to take the full header, which is 16
+	 * bits long, and break it into 3 pieces: S0, LENGTH and S1.
+	 *
+	 * FIXME: These operation values only works for advertise channel PDUs.
+	 */
 	buf[0] = data[0];
 	buf[1] = data[1] & 0x3F;
 	buf[2] = (data[1] >> 6) & 0x3;
 
-	/* Copy ADV PDU payload */
+	/* Copy PDU payload */
 	memcpy(buf + 3, data + 2, len - 2);
 
 	NRF_RADIO->TASKS_TXEN = 1UL;
