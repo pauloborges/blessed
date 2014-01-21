@@ -28,7 +28,14 @@
 #define RADIO_MAX_PDU			39
 #define RADIO_MIN_PDU			2
 
+/* Event generated after a completed packet reception. The associated data is a
+ * pointer to a radio_packet struct.
+ */
 #define RADIO_EVT_RX_COMPLETED		1
+
+/* Event generated after a completed packet transmission. There is no
+ * associated data.
+ */
 #define RADIO_EVT_TX_COMPLETED		2
 
 typedef enum radio_power {
