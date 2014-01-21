@@ -164,6 +164,7 @@ int16_t radio_stop(void)
 
 int16_t radio_set_tx_power(radio_power_t power)
 {
+	/* nRF51 Series Reference Manual v2.1, section 16.2.6, page 86 */
 	switch(power) {
 	case RADIO_POWER_4_DBM:
 		NRF_RADIO->TXPOWER = RADIO_TXPOWER_TXPOWER_Pos4dBm
