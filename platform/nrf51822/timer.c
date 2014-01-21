@@ -45,6 +45,18 @@
 #define MAX_TIMERS			4
 #define OP_QUEUE_SIZE			7
 
+#define ERROR_HANDLING(err_code)					\
+	switch (err_code) {						\
+	case NRF_ERROR_INVALID_PARAM:					\
+		return -EINVAL;						\
+	case NRF_ERROR_INVALID_STATE:					\
+		return -ENOREADY;					\
+	case NRF_ERROR_NO_MEM:						\
+		return -ENOMEM;						\
+	default:							\
+		return -EINTERN;					\
+	}
+
 /* Defines a buffer where both timers and timer operations will be stored.
  * This definition comes from app_timer.h.
  */
@@ -89,16 +101,10 @@ int16_t timer_create(uint8_t type, timer_cb cb)
 
 	err_code = app_timer_create(&id, mode, cb);
 
-	switch (err_code) {
-	case NRF_ERROR_INVALID_PARAM:
-		return -EINVAL;
-	case NRF_ERROR_INVALID_STATE:
-		return -ENOREADY;
-	case NRF_ERROR_NO_MEM:
-		return -ENOMEM;
-	}
+	if (err_code == NRF_SUCCESS)
+		return id;
 
-	return id;
+	ERROR_HANDLING(err_code);
 }
 
 int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
@@ -113,16 +119,10 @@ int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
 
 	err_code = app_timer_start(id, ticks, user_data);
 
-	switch (err_code) {
-	case NRF_ERROR_INVALID_PARAM:
-		return -EINVAL;
-	case NRF_ERROR_INVALID_STATE:
-		return -ENOREADY;
-	case NRF_ERROR_NO_MEM:
-		return -ENOMEM;
-	}
+	if (err_code == NRF_SUCCESS)
+		return 0;
 
-	return 0;
+	ERROR_HANDLING(err_code);
 }
 
 int16_t timer_stop(int16_t id)
@@ -134,14 +134,8 @@ int16_t timer_stop(int16_t id)
 
 	err_code = app_timer_stop(id);
 
-	switch (err_code) {
-	case NRF_ERROR_INVALID_PARAM:
-		return -EINVAL;
-	case NRF_ERROR_INVALID_STATE:
-		return -ENOREADY;
-	case NRF_ERROR_NO_MEM:
-		return -ENOMEM;
-	}
+	if (err_code == NRF_SUCCESS)
+		return 0;
 
-	return 0;
+	ERROR_HANDLING(err_code);
 }
