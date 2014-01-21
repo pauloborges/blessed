@@ -67,6 +67,12 @@ static uint8_t status;
 
 static __inline int8_t ch2freq(uint8_t ch)
 {
+	/* nRF51 Series Reference Manual v2.1, section 16.2.19, page 91
+	 * Link Layer specification section 1.4.1, Core 4.1, page 2502
+	 *
+	 * The nRF51822 is configured using the frequency offset from
+	 * 2400 MHz.
+	 */
 	switch (ch) {
 	case 37:
 		return 2;
