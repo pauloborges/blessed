@@ -44,7 +44,7 @@
  * +--------+--------+---------+
  *  2 octets 6 octets 31 octets
  *
- * Header: PDU Type=ADV_NONCONN_IND, TxAddr=1, Lenght=32
+ * Header: PDU Type=ADV_NONCONN_IND, TxAddr=1, Length=32
  * AdvA: FF:EE:DD:CC:BB:AA
  * AdvData: "Hello world from BLEStack!"
  */
