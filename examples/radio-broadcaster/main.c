@@ -60,7 +60,7 @@ static const uint8_t pdu[] = {	0x42, 0x20, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
 				0x6B, 0x21 };
 
 static uint8_t channels[] = { 37, 38, 39 };
-static uint8_t idx = 0;
+static uint8_t idx;
 
 static int16_t adv_event;
 static int16_t adv_interval;
@@ -77,10 +77,7 @@ void adv_interval_timeout(void *user_data)
 void adv_event_timeout(void *user_data)
 {
 	idx = 0;
-
-	radio_send(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC, pdu,
-								sizeof(pdu));
-	timer_start(adv_interval, ADV_INTERVAL, NULL);
+	adv_interval_timeout(NULL);
 }
 
 int main(void)
@@ -96,10 +93,10 @@ int main(void)
 	DBG("Time between PDUs: %u ms", ADV_INTERVAL);
 	DBG("T_advEvent:        %u ms", ADV_EVENT);
 
-	radio_send(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC, pdu,
-								sizeof(pdu));
 	timer_start(adv_interval, ADV_INTERVAL, NULL);
 	timer_start(adv_event, ADV_EVENT, NULL);
+
+	adv_event_timeout(NULL);
 
 	while (1);
 
