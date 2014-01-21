@@ -31,13 +31,18 @@
 #include "radio.h"
 #include "log.h"
 
+/* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
 #define ADV_CHANNEL_AA			0x8E89BED6
+
+/* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
 #define ADV_CHANNEL_CRC			0x555555
 
 #define ADV_EVENT			100
 #define ADV_INTERVAL			5
 
-/*
+/* Link Layer specification section 2.3, Core 4.1, page 2504
+ * Link Layer specification section 2.3.1.3, Core 4.1, page 2507
+ *
  * ADV_NONCONN_IND PDU (39 octets):
  * +--------+--------+---------+
  * | Header |  AdvA  | AdvData |
