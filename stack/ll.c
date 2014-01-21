@@ -111,7 +111,7 @@ static void t_adv_pdu_cb(void *user_data)
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
 }
 
-int16_t ll_advertise_start(adv_type_t type, uint8_t *data, uint8_t len)
+int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 {
 	if (current_state != LL_STATE_STANDBY)
 		return -ENOREADY;

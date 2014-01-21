@@ -26,5 +26,5 @@
 
 int16_t ll_init(const bdaddr_t *addr);
 
-int16_t ll_advertise_start(adv_type_t type, uint8_t *data, uint8_t len);
+int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len);
 int16_t ll_advertise_stop(void);
