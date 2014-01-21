@@ -217,28 +217,67 @@ int16_t radio_init(void)
 
 	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
 
+	/* nRF51 Series Reference Manual v2.1, section 16.2.9, page 88
+	 *
+	 * Enable data whitening, set the maximum payload length and set the
+	 * access address size (3 + 1 octets).
+	 */
 	NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Enabled
 						<< RADIO_PCNF1_WHITEEN_Pos)
 				| (MAX_BUF_LEN << RADIO_PCNF1_MAXLEN_Pos)
 				| (3UL << RADIO_PCNF1_BALEN_Pos);
 
+	/* nRF51 Series Reference Manual v2.1, section 16.1.4, page 74
+	 * nRF51 Series Reference Manual v2.1, section 16.2.14-15, pages 89-90
+	 *
+	 * Preset the address to use when receive and transmit packets (logical
+	 * address 0, which is assembled by base address BASE0 and prefix byte
+	 * PREFIX0.AP0.
+	 */
 	NRF_RADIO->RXADDRESSES = 1UL;
 	NRF_RADIO->TXADDRESS = 0UL;
 
+	/* nRF51 Series Reference Manual v2.1, section 16.1.7, page 76
+	 * nRF51 Series Reference Manual v2.1, sections 16.1.16-17, page 90
+	 *
+	 * Configure the CRC length (3 octets), polynominal and set it to
+	 * ignore the access address when calculate the CRC.
+	 */
 	NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
 		(RADIO_CRCCNF_SKIP_ADDR_Skip << RADIO_CRCCNF_SKIP_ADDR_Pos);
 	NRF_RADIO->CRCPOLY = 0x100065B;
 
-	/* FIXME: These header sizes only works for advertise channel PDUs */
+	/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
+	 * nRF51 Series Reference Manual v2.1, sections 16.1.8, page 87
+	 * Link Layer specification section 2.3, Core 4.1, page 2504
+	 * Link Layer specification section 2.4, Core 4.1, page 2511
+	 *
+	 * Configure the header size. The nRF51822 has 3 fields before the
+	 * payload field: S0, LENGTH and S1. These fields can be used to store
+	 * the PDU header.
+	 *
+	 * FIXME: These header sizes only works for advertise channel PDUs
+	 */
 	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos) |      /* 1 byte */
 				(6UL << RADIO_PCNF0_LFLEN_Pos) | /* 6 bits */
 				(2UL << RADIO_PCNF0_S1LEN_Pos);  /* 2 bits */
 
+	/* nRF51 Series Reference Manual v2.1, section 16.1.8, page 76
+	 * nRF51 Series Reference Manual v2.1, section 16.1.10-11, pages 78-80
+	 * nRF51 Series Reference Manual v2.1, section 16.2.1, page 85
+	 *
+	 * Enable READY_START short: when the READY event happens, initialize
+	 * the START task.
+	 *
+	 * Enable END_DISABLE short: when the END event happens, initialize the
+	 * DISABLE task.
+	 */
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled
 					<< RADIO_SHORTS_READY_START_Pos)
 					| (RADIO_SHORTS_END_DISABLE_Enabled
 					<< RADIO_SHORTS_END_DISABLE_Pos);
 
+	/* Trigger RADIO interruption when an END event happens */
 	NRF_RADIO->INTENSET = RADIO_INTENSET_END_Msk;
 
 	NVIC_SetPriority(RADIO_IRQn, IRQ_PRIORITY_HIGH);
