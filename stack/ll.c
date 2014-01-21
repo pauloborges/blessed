@@ -172,11 +172,20 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 
 int16_t ll_advertise_stop()
 {
+	int16_t err_code;
+
 	if (current_state != LL_STATE_ADVERTISING)
 		return -ENOREADY;
 
-	timer_stop(t_adv_pdu);
-	timer_stop(t_adv_event);
+	err_code = timer_stop(t_adv_pdu);
+
+	if (err_code < 0)
+		return err_code;
+
+	err_code = timer_stop(t_adv_event);
+
+	if (err_code < 0)
+		return err_code;
 
 	current_state = LL_STATE_STANDBY;
 
