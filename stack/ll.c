@@ -194,18 +194,38 @@ int16_t ll_advertise_stop()
 
 int16_t ll_init(const bdaddr_t *addr)
 {
+	int16_t err_code;
+
 	if (addr == NULL)
 		return -EINVAL;
 
-	log_init();
-	timer_init();
-	radio_init();
+	err_code = log_init();
+
+	if (err_code < 0 && err_code != -EALREADY)
+		return err_code;
+
+	err_code = timer_init();
+
+	if (err_code < 0)
+		return err_code;
+
+	err_code = radio_init();
+
+	if (err_code < 0)
+		return err_code;
+
+	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
+
+	if (t_adv_event < 0)
+		return t_adv_event;
+
+	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
+
+	if (t_adv_pdu < 0)
+		return t_adv_pdu;
 
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
-
-	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
-	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
 
 	return 0;
 }
