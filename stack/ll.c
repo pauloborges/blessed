@@ -113,6 +113,8 @@ static void t_adv_pdu_cb(void *user_data)
 
 int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 {
+	int16_t err_code;
+
 	if (current_state != LL_STATE_STANDBY)
 		return -ENOREADY;
 
@@ -142,17 +144,28 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 		break;
 	}
 
-	DBG("Starting advertise: PDU interval %ums, event interval %ums",
-				t_adv_pdu_interval, t_adv_event_interval);
+	err_code = timer_start(t_adv_event, t_adv_event_interval, NULL);
 
-	current_state = LL_STATE_ADVERTISING;
+	if (err_code < 0)
+		return err_code;
+
+	err_code = timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+
+	if (err_code < 0)
+		return err_code;
+
 	adv_ch_idx = 0;
 
-	timer_start(t_adv_event, t_adv_event_interval, NULL);
-	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+	err_code = radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV,
+			LL_CRCINIT_ADV, (uint8_t *) &pdu_adv, sizeof(pdu_adv));
 
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
-					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
+	if (err_code < 0)
+		return err_code;
+
+	current_state = LL_STATE_ADVERTISING;
+
+	DBG("PDU interval %ums, event interval %ums", t_adv_pdu_interval,
+							t_adv_event_interval);
 
 	return 0;
 }
