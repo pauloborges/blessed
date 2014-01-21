@@ -83,7 +83,11 @@ void radio_hdlr(uint8_t evt, void *data)
 		goto recv;
 	}
 
-	if ((packet->pdu[1] & 0x3F) < 8) {
+	/* Link Layer specification section 2.3, Core 4.1, page 2505
+	 *
+	 * The length is the 6 LSB, and the minimum allowed payload is 6 bytes.
+	 */
+	if ((packet->pdu[1] & 0x3F) < 6) {
 		DBG("ch %u bad length", channels[idx]);
 		goto recv;
 	}
