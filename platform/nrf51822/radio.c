@@ -108,10 +108,16 @@ void RADIO_IRQHandler(void)
 		packet.crcstatus = NRF_RADIO->CRCSTATUS;
 
 		/* Mount ADV PDU header */
+
+		/* Do the inverse process described in radio_send().
+		 *
+		 * FIXME: These operation values only works for advertise
+		 * channel PDUs.
+		 */
 		packet.pdu[0] = buf[0];
 		packet.pdu[1] = ((buf[2] & 0x3) << 6) | (buf[1] & 0x3F);
 
-		/* Copy ADV PDU payload */
+		/* Copy PDU payload */
 		memcpy(packet.pdu + 2, buf + 3, buf[1]);
 
 		handler(RADIO_EVT_RX_COMPLETED, &packet);
