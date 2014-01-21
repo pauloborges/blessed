@@ -33,7 +33,8 @@
 #include "errcodes.h"
 #include "radio.h"
 
-/* nRF51 Series Reference Manual v1.1, page 71:
+/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
+ *
  * S0, LENGTH and S1 occupies 3 bytes in memory, not 2
  */
 #define MAX_BUF_LEN			(RADIO_MAX_PDU + 1)
