@@ -242,12 +242,7 @@ int16_t radio_set_tx_power(radio_power_t power)
 	return -EINVAL;
 }
 
-void radio_register_handler(radio_handler hdlr)
-{
-	handler = hdlr;
-}
-
-int16_t radio_init(void)
+int16_t radio_init(radio_handler hdlr)
 {
 	if (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL) {
 		NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
@@ -329,7 +324,7 @@ int16_t radio_init(void)
 	memset(buf, 0, sizeof(buf));
 
 	status = STATUS_INITIALIZED;
-	handler = NULL;
+	handler = hdlr;
 
 	return 0;
 }

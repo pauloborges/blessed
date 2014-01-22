@@ -57,8 +57,7 @@ struct radio_packet {
 
 typedef void (*radio_handler) (uint8_t evt, void *data);
 
-int16_t radio_init(void);
-void radio_register_handler(radio_handler hdlr);
+int16_t radio_init(radio_handler hdlr);
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,

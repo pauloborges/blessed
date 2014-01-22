@@ -84,7 +84,7 @@ int main(void)
 {
 	log_init();
 	timer_init();
-	radio_init();
+	radio_init(NULL);
 
 	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);

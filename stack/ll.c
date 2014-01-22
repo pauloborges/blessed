@@ -193,7 +193,7 @@ int16_t ll_init(const bdaddr_t *addr)
 	if (err_code < 0)
 		return err_code;
 
-	err_code = radio_init();
+	err_code = radio_init(NULL);
 
 	if (err_code < 0)
 		return err_code;

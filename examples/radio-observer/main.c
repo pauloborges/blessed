@@ -102,8 +102,7 @@ int main(void)
 {
 	log_init();
 	timer_init();
-	radio_init();
-	radio_register_handler(radio_hdlr);
+	radio_init(radio_hdlr);
 
 	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
 	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);
