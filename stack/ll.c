@@ -92,16 +92,6 @@ static uint32_t t_adv_pdu_interval;
 
 static ll_pdu_adv_t pdu_adv;
 
-static void t_adv_event_cb(void *user_data)
-{
-	adv_ch_idx = 0;
-
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
-					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
-
-	timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
-}
-
 static void t_adv_pdu_cb(void *user_data)
 {
 	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
@@ -109,6 +99,12 @@ static void t_adv_pdu_cb(void *user_data)
 
 	if (adv_ch_idx < 3)
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+}
+
+static void t_adv_event_cb(void *user_data)
+{
+	adv_ch_idx = 0;
+	t_adv_pdu_cb(NULL);
 }
 
 int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
@@ -149,19 +145,7 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 	if (err_code < 0)
 		return err_code;
 
-	err_code = timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
-
-	if (err_code < 0)
-		return err_code;
-
-	adv_ch_idx = 0;
-
-	err_code = radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV,
-			LL_CRCINIT_ADV, (uint8_t *) &pdu_adv, sizeof(pdu_adv));
-
-	if (err_code < 0)
-		return err_code;
-
+	t_adv_event_cb(NULL);
 	current_state = LL_STATE_ADVERTISING;
 
 	DBG("PDU interval %ums, event interval %ums", t_adv_pdu_interval,
