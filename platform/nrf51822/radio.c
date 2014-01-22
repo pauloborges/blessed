@@ -48,23 +48,6 @@ static radio_handler handler;
 static uint8_t buf[MAX_BUF_LEN];
 static uint8_t status;
 
-#define COMMON_INITIALIZATION(ch, aa, crcinit)				\
-	do {								\
-		int8_t freq;						\
-		if (!(status & STATUS_INITIALIZED))			\
-			return -ENOREADY;				\
-		if (status & STATUS_BUSY)				\
-			return -EBUSY;					\
-		freq = ch2freq(ch);					\
-		if (freq < 0)						\
-			return -EINVAL;					\
-		NRF_RADIO->DATAWHITEIV = ch & 0x3F;			\
-		NRF_RADIO->FREQUENCY = freq;				\
-		NRF_RADIO->BASE0 = (aa << 8) & 0xFFFFFF00;		\
-		NRF_RADIO->PREFIX0 = (aa >> 24) & 0x000000FF;		\
-		NRF_RADIO->CRCINIT = crcinit;				\
-	} while (0)
-
 static __inline int8_t ch2freq(uint8_t ch)
 {
 	/* nRF51 Series Reference Manual v2.1, section 16.2.19, page 91
@@ -88,6 +71,30 @@ static __inline int8_t ch2freq(uint8_t ch)
 		else
 			return 6 + (2 * ch);
 	}
+}
+
+static __inline int16_t common_init(uint8_t ch, uint32_t aa,
+							uint32_t crcinit) {
+	int8_t freq;
+
+	if (!(status & STATUS_INITIALIZED))
+		return -ENOREADY;
+
+	if (status & STATUS_BUSY)
+		return -EBUSY;
+
+	freq = ch2freq(ch);
+
+	if (freq < 0)
+		return -EINVAL;
+
+	NRF_RADIO->DATAWHITEIV = ch & 0x3F;
+	NRF_RADIO->FREQUENCY = freq;
+	NRF_RADIO->BASE0 = (aa << 8) & 0xFFFFFF00;
+	NRF_RADIO->PREFIX0 = (aa >> 24) & 0x000000FF;
+	NRF_RADIO->CRCINIT = crcinit;
+
+	return 0;
 }
 
 void RADIO_IRQHandler(void)
@@ -128,13 +135,18 @@ void RADIO_IRQHandler(void)
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 					const uint8_t *data, uint8_t len)
 {
+	int16_t err_code;
+
 	if (len > RADIO_MAX_PDU)
 		return -EINVAL;
 
 	if (len < RADIO_MIN_PDU)
 		return -EINVAL;
 
-	COMMON_INITIALIZATION(ch, aa, crcinit);
+	err_code = common_init(ch, aa, crcinit);
+
+	if (err_code < 0)
+		return err_code;
 
 	/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
 	 * Link Layer specification section 2.3, Core 4.1, page 2504
@@ -162,7 +174,12 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
 {
-	COMMON_INITIALIZATION(ch, aa, crcinit);
+	int16_t err_code;
+
+	err_code = common_init(ch, aa, crcinit);
+
+	if (err_code < 0)
+		return err_code;
 
 	NRF_RADIO->TASKS_RXEN = 1UL;
 	status |= STATUS_RX;
