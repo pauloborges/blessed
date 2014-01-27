@@ -41,8 +41,7 @@
  * 32768 kHz.
  */
 #define PRESCALER			0
-
-#define MAX_TIMERS			4
+#define MAX_TIMERS			8
 #define OP_QUEUE_SIZE			7
 
 #define ERROR_HANDLING(err_code)					\
