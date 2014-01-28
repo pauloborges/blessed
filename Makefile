@@ -9,6 +9,8 @@ endif
 PLATFORM_PATH		= platform/$(PLATFORM)
 -include $(PLATFORM_PATH)/Makefile.platform
 
+CONFIGS			= $(addprefix -D, $(-*-command-variables-*-))
+
 BUILD_PATH		= build
 LIB_TARGET		= $(BUILD_PATH)/libblestack.a
 
@@ -18,7 +20,8 @@ INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 
 CFLAGS			= $(PLATFORM_CFLAGS)				\
-			  $(INCLUDES)
+			  $(INCLUDES)					\
+			  $(CONFIGS)
 
 ASMFLAGS		= $(PLATFORM_ASMFLAGS)
 
