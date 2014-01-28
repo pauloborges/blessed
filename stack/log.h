@@ -31,10 +31,8 @@ int16_t log_print(const char *format, ...);
 	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define LOG(level, fmt, arg...)						\
-	do {								\
 		log_print(level ":%s:%s() " fmt "\r\n",			\
-					__ONLYFILE__, __func__, ## arg);	\
-	} while (0)
+					__ONLYFILE__, __func__, ## arg)
 
 #define DBG(fmt, arg...)		LOG("DEBUG", fmt, ## arg)
 
