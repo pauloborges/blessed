@@ -35,5 +35,7 @@ struct bci_adv_params {
 
 int16_t bci_init(const bdaddr_t *addr);
 
+void bci_get_advertising_params(struct bci_adv_params *params);
+
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t bci_set_advertise_enable(uint8_t enable);

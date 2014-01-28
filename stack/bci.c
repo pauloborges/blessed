@@ -44,6 +44,11 @@ static struct bci_adv_params adv_params = {
 	.chmap = LL_ADV_CH_ALL
 };
 
+void bci_get_advertising_params(struct bci_adv_params *params)
+{
+	memcpy(params, &adv_params, sizeof(adv_params));
+}
+
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 {
 	if (data == NULL)
