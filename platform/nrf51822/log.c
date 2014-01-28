@@ -44,6 +44,7 @@
 #define READY				1
 #define BUSY				2
 
+#if CONFIG_LOG_ENABLE
 static uint16_t pos;
 static uint16_t len;
 static uint8_t buffer[BUFFER_LEN];
@@ -59,8 +60,22 @@ static __inline void tx_next_byte(void)
 	app_uart_put(buffer[pos++]);
 }
 
+static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
+{
+	switch (p_app_uart_evt->evt_type) {
+	case APP_UART_TX_EMPTY:
+		tx_next_byte();
+		break;
+
+	default:
+		break;
+	}
+}
+#endif
+
 int16_t log_print(const char *format, ...)
 {
+#if CONFIG_LOG_ENABLE
 	va_list args;
 
 	if (state == UNINITIALIZED)
@@ -77,24 +92,14 @@ int16_t log_print(const char *format, ...)
 	state = BUSY;
 
 	tx_next_byte();
+#endif
 
 	return 0;
 }
 
-static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
-{
-	switch (p_app_uart_evt->evt_type) {
-	case APP_UART_TX_EMPTY:
-		tx_next_byte();
-		break;
-
-	default:
-		break;
-	}
-}
-
 int16_t log_init(void)
 {
+#if CONFIG_LOG_ENABLE
 	uint32_t err_code;
 
 	UNUSED(err_code);
@@ -120,6 +125,7 @@ int16_t log_init(void)
 	/* Necessary to fully initialize the UART */
 	nrf_delay_ms(1);
 	log_print("\r\n");
+#endif
 
 	return 0;
 }

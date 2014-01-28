@@ -24,6 +24,10 @@
  *  SOFTWARE.
  */
 
+#ifndef CONFIG_LOG_ENABLE
+#define CONFIG_LOG_ENABLE		1
+#endif
+
 int16_t log_init(void);
 int16_t log_print(const char *format, ...);
 
