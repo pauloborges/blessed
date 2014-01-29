@@ -141,7 +141,6 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 	}
 
 	err_code = timer_start(t_adv_event, t_adv_event_interval, NULL);
-
 	if (err_code < 0)
 		return err_code;
 
@@ -162,12 +161,10 @@ int16_t ll_advertise_stop()
 		return -ENOREADY;
 
 	err_code = timer_stop(t_adv_pdu);
-
 	if (err_code < 0)
 		return err_code;
 
 	err_code = timer_stop(t_adv_event);
-
 	if (err_code < 0)
 		return err_code;
 
@@ -184,27 +181,22 @@ int16_t ll_init(const bdaddr_t *addr)
 		return -EINVAL;
 
 	err_code = log_init();
-
 	if (err_code < 0 && err_code != -EALREADY)
 		return err_code;
 
 	err_code = timer_init();
-
 	if (err_code < 0)
 		return err_code;
 
 	err_code = radio_init(NULL);
-
 	if (err_code < 0)
 		return err_code;
 
 	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
-
 	if (t_adv_event < 0)
 		return t_adv_event;
 
 	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
-
 	if (t_adv_pdu < 0)
 		return t_adv_pdu;
 
