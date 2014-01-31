@@ -33,6 +33,20 @@
 #include <blessed/bci.h>
 
 #include "ll.h"
+#include "assert.h"
+
+/* BCI and LL layers shares common symbols. But since LL can not include BCI
+ * and BCI can not expose LL to the user, both layers have definitions of the
+ * same symbols. To ensure consistency, here these symbols are asserted in
+ * compile time.
+ */
+STATIC_ASSERT(BCI_ADV_INTERVAL_MIN_CONN == LL_ADV_INTERVAL_MIN_CONN);
+STATIC_ASSERT(BCI_ADV_INTERVAL_MIN_NONCONN == LL_ADV_INTERVAL_MIN_NONCONN);
+STATIC_ASSERT(BCI_ADV_INTERVAL_MAX == LL_ADV_INTERVAL_MAX);
+STATIC_ASSERT(BCI_ADV_CH_37 == LL_ADV_CH_37);
+STATIC_ASSERT(BCI_ADV_CH_38 == LL_ADV_CH_38);
+STATIC_ASSERT(BCI_ADV_CH_39 == LL_ADV_CH_39);
+STATIC_ASSERT(BCI_ADV_CH_ALL == LL_ADV_CH_ALL);
 
 static const bdaddr_t *laddr;
 static uint8_t adv_data[BCI_ADV_MTU_DATA];
