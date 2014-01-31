@@ -1,18 +1,17 @@
 # Common Makefile to build applications
 
-# If BLESTACK_PATH isn't defined, assume Makefile.common was the last inclusion
-ifeq ($(BLESTACK_PATH),)
-	BLESTACK_PATH = $(patsubst %\,%,$(dir $(lastword $(MAKEFILE_LIST))))
-endif
-
 -include Makefile.config
 
 ifeq ($(PLATFORM),)
         $(error PLATFORM is not defined)
 endif
 
+ifeq ($(BLESTACK_PATH),)
+	BLESTACK_PATH = ../..
+endif
+
 PLATFORM_PATH		= $(BLESTACK_PATH)/platform/$(PLATFORM)
--include $(PLATFORM_PATH)/Makefile.platform
+include $(PLATFORM_PATH)/Makefile.platform
 
 ifeq ($(PROJECT_TARGET),)
         $(error PROJECT_TARGET is not defined)
