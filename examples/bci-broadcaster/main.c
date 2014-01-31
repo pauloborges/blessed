@@ -48,7 +48,7 @@ int main(void)
 		return status;
 
 	bci_set_advertising_data(data, sizeof(data));
-	bci_set_advertise_enable(ENABLE);
+	bci_set_advertise_enable(BCI_ENABLE);
 
 	while (1);
 

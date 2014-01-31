@@ -24,8 +24,8 @@
  *  SOFTWARE.
  */
 
-#define ENABLE				1
-#define DISABLE				0
+#define BCI_ENABLE			1
+#define BCI_DISABLE			0
 
 int16_t bci_init(const bdaddr_t *addr);
 
