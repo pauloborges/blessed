@@ -44,7 +44,7 @@
 #define STATUS_TX			4
 #define STATUS_BUSY			(STATUS_RX | STATUS_TX)
 
-static radio_handler handler;
+static radio_cb handler;
 static uint8_t buf[MAX_BUF_LEN];
 static uint8_t status;
 
@@ -242,7 +242,7 @@ int16_t radio_set_tx_power(radio_power_t power)
 	return -EINVAL;
 }
 
-int16_t radio_init(radio_handler hdlr)
+int16_t radio_init(radio_cb hdlr)
 {
 	if (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL) {
 		NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
