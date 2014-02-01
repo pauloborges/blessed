@@ -1,7 +1,8 @@
 # Makefile for nRF51822 platform
 
-# FIXME: Hardcoded path
-NRF51_SDK_PATH		= /home/borges/workspace/bless/nrf51-sdk
+ifeq ($(NRF51_SDK_PATH),)
+        $(error NRF51_SDK_PATH is not defined)
+endif
 
 ifeq ($(DEVICE_FAMILY),)
 	DEVICE_FAMILY = NRF51
@@ -39,9 +40,9 @@ OBJCOPY			= arm-none-eabi-objcopy
 OBJDUMP			= arm-none-eabi-objdump
 PROGRAMMER		= nrftool
 
-SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Include
-SDK_SOURCE_PATH		= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source
-SDK_TEMPLATE_PATH	= $(NRF51_SDK_PATH)/Nordic/nrf51822/Source/templates
+SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/nrf51822/Include
+SDK_SOURCE_PATH		= $(NRF51_SDK_PATH)/nrf51822/Source
+SDK_TEMPLATE_PATH	= $(NRF51_SDK_PATH)/nrf51822/Source/templates
 
 PLATFORM_INCLUDE_PATHS	= $(SDK_INCLUDE_PATH)				\
 			  $(SDK_INCLUDE_PATH)/gcc			\
