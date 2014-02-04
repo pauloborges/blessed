@@ -24,6 +24,20 @@
  *  SOFTWARE.
  */
 
+/* Link Layer specification Section 2.1, Core 4.1 page 2503 */
+#define LL_MTU				39
+
+/* Link Layer specification Section 2.3, Core 4.1 page 2504
+ * Link Layer specification Section 2.3, Core 4.1 page 2511
+ */
+#define LL_HEADER_LEN			2
+
+/* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
+#define LL_ADV_MTU_PAYLOAD		(LL_MTU - LL_HEADER_LEN)
+
+/* Link Layer specification Section 2.3.1, Core 4.1 page 2506 */
+#define LL_ADV_MTU_DATA			(LL_ADV_MTU_PAYLOAD - BDADDR_LEN)
+
 int16_t ll_init(const bdaddr_t *addr);
 
 int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len);

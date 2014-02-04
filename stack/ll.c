@@ -36,12 +36,6 @@
 #include "radio.h"
 #include "ll.h"
 
-/* Link Layer specification Section 2.1, Core 4.1 page 2503 */
-#define LL_MTU				39
-
-/* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
-#define LL_MTU_ADV			37
-
 /* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
 #define LL_ACCESS_ADDRESS_ADV		0x8E89BED6
 
@@ -76,7 +70,7 @@ typedef struct ll_pdu_adv {
 	uint8_t rx_add:1;
 	uint8_t length:6; /* 6 <= length <= 37 */
 	uint8_t _rfu_1:2;
-	uint8_t payload[LL_MTU_ADV];
+	uint8_t payload[LL_ADV_MTU_PAYLOAD];
 } __attribute__ ((packed)) ll_pdu_adv_t;
 
 static const bdaddr_t *laddr;
