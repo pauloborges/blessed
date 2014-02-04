@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <blessed/errcodes.h>
+#include <blessed/bdaddr.h>
 #include <blessed/common.h>
 #include <blessed/bci.h>
 

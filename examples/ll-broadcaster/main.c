@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 
+#include <blessed/bdaddr.h>
 #include <blessed/common.h>
 
 #include "ll.h"

@@ -32,6 +32,7 @@
 #include <blessed/log.h>
 #include <blessed/timer.h>
 #include <blessed/common.h>
+#include <blessed/bdaddr.h>
 
 #include "radio.h"
 #include "ll.h"

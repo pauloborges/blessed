@@ -24,11 +24,13 @@
  *  SOFTWARE.
  */
 
-/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
-typedef enum adv_type {
-	ADV_CONN_UNDIR,		/* connectable undirected */
-	ADV_CONN_DIR_HIGH,	/* connectable directed (high duty cycle) */
-	ADV_SCAN_UNDIR,		/* scannable undirected */
-	ADV_NONCONN_UNDIR,	/* non-connectable undirected */
-	ADV_CONN_DIR_LOW,	/* connectable directed (low duty cycle) */
-} adv_type_t;
+#define BDADDR_LEN			6
+
+#define BDADDR_TYPE_PUBLIC		0
+#define BDADDR_TYPE_RANDOM		1
+
+/* Link Layer specification Section 1.3, Core 4.1 page 2500 */
+typedef struct bdaddr {
+	uint8_t addr[BDADDR_LEN];
+	uint8_t type;
+} bdaddr_t;

@@ -27,6 +27,7 @@
 /* Blestack API entrypoint */
 
 #include <blessed/common.h>
+#include <blessed/bdaddr.h>
 #include <blessed/bci.h>
 
 #define BLUETOOTH_INIT(status)						\
