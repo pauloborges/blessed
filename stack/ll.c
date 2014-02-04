@@ -79,6 +79,7 @@ static int16_t t_adv_pdu;
 static uint32_t t_adv_pdu_interval;
 
 static ll_pdu_adv_t pdu_adv;
+static ll_pdu_adv_t pdu_scan_rsp;
 
 static __inline uint8_t first_adv_ch_idx(void)
 {
@@ -203,12 +204,31 @@ int16_t ll_set_advertising_data(const uint8_t *data, uint8_t len)
 	return 0;
 }
 
-static void init_adv_pdu(void)
+int16_t ll_set_scan_response_data(const uint8_t *data, uint8_t len)
+{
+	if (data == NULL)
+		return -EINVAL;
+
+	if (len > LL_ADV_MTU_DATA)
+		return -EINVAL;
+
+	memcpy(pdu_scan_rsp.payload + sizeof(laddr->addr), data, len);
+	pdu_scan_rsp.length = sizeof(laddr->addr) + len;
+
+	return 0;
+}
+
+static void init_adv_pdus(void)
 {
 	pdu_adv.tx_add = laddr->type;
 	memcpy(pdu_adv.payload, laddr->addr, sizeof(laddr->addr));
 
 	ll_set_advertising_data(NULL, 0);
+
+	pdu_scan_rsp.tx_add = laddr->type;
+	memcpy(pdu_scan_rsp.payload, laddr->addr, sizeof(laddr->addr));
+
+	ll_set_scan_response_data(NULL, 0);
 }
 
 int16_t ll_init(const bdaddr_t *addr)
@@ -241,7 +261,7 @@ int16_t ll_init(const bdaddr_t *addr)
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
 
-	init_adv_pdu();
+	init_adv_pdus();
 
 	return 0;
 }
