@@ -26,7 +26,8 @@
 
 #include <stdint.h>
 
-#include "ble-common.h"
+#include <blessed/common.h>
+
 #include "ll.h"
 
 static const bdaddr_t addr = { { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF },

@@ -24,14 +24,24 @@
  *  SOFTWARE.
  */
 
-/* TODO: rename to ble.h */
-/* Blestack API entrypoint */
+#define BDADDR_LEN			6
 
-#include "ble-common.h"
-#include "bci.h"
+#define BDADDR_TYPE_PUBLIC		0
+#define BDADDR_TYPE_RANDOM		1
 
-#define BLUETOOTH_INIT(status)						\
-	do {								\
-		static bdaddr_t addr = BLE_ADDRESS;			\
-		status = bci_init(&addr);				\
-	} while (0)
+/* Link Layer specification Section 1.4, Core 4.1 page 2501 */
+typedef struct bdaddr {
+	uint8_t addr[BDADDR_LEN];
+	uint8_t type;
+} bdaddr_t;
+
+#define ADVDATA_LEN			31
+
+/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
+typedef enum adv_type {
+	ADV_CONN_UNDIR,		/* connectable undirected */
+	ADV_CONN_DIR_HIGH,	/* connectable directed (high duty cycle) */
+	ADV_SCAN_UNDIR,		/* scannable undirected */
+	ADV_NONCONN_UNDIR,	/* non-connectable undirected */
+	ADV_CONN_DIR_LOW,	/* connectable directed (low duty cycle) */
+} adv_type_t;

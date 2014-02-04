@@ -28,9 +28,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "errcodes.h"
-#include "ble-common.h"
-#include "bci.h"
+#include <blessed/errcodes.h>
+#include <blessed/common.h>
+#include <blessed/bci.h>
+
 #include "ll.h"
 
 static const bdaddr_t *laddr;

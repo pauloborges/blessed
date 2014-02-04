@@ -34,9 +34,10 @@
 #include <nrf_delay.h>
 #include <boards.h>
 
+#include <blessed/errcodes.h>
+#include <blessed/log.h>
+
 #include "nrf51822.h"
-#include "errcodes.h"
-#include "log.h"
 
 #define BUFFER_LEN			128
 

@@ -28,12 +28,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "errcodes.h"
-#include "log.h"
-#include "radio.h"
-#include "timer.h"
+#include <blessed/errcodes.h>
+#include <blessed/log.h>
+#include <blessed/timer.h>
+#include <blessed/common.h>
 
-#include "ble-common.h"
+#include "radio.h"
 #include "ll.h"
 
 /* Link Layer specification Section 2.1, Core 4.1 page 2503 */

@@ -30,9 +30,9 @@
 #include <nrf51_bitfields.h>
 #include <app_timer.h>
 
-#include "errcodes.h"
-#include "timer.h"
-#include "log.h"
+#include <blessed/errcodes.h>
+#include <blessed/timer.h>
+#include <blessed/log.h>
 
 /* nRF51 Series Reference Manual, section 18.1.2, page 101
  *

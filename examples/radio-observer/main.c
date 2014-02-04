@@ -28,9 +28,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "timer.h"
+#include <blessed/timer.h>
+#include <blessed/log.h>
+
 #include "radio.h"
-#include "log.h"
 
 #define ADV_CHANNEL_AA			0x8E89BED6
 #define ADV_CHANNEL_CRC			0x555555

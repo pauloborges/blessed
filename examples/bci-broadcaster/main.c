@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-#include "bluetooth.h"
+#include <blessed/bluetooth.h>
 
 #define BLE_ADDRESS_ADDR		{ 0xEF, 0xBE, 0xAD, 0xDE, 0x00, 0x00 }
 #define BLE_ADDRESS_TYPE		BDADDR_TYPE_RANDOM

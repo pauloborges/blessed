@@ -23,7 +23,8 @@ LIBBLESSED		= $(BLESSED_BUILD)/libblessed.a
 
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 			  $(PROJECT_INCLUDE_PATHS)			\
-			  $(BLESSED_PATH)/stack
+			  $(BLESSED_PATH)/stack				\
+			  $(BLESSED_PATH)/include
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 

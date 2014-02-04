@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "log.h"
+#include <blessed/log.h>
 
 #define LOOP				99
 

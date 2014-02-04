@@ -15,6 +15,7 @@ BUILD_PATH		= build
 LIB_TARGET		= $(BUILD_PATH)/libblessed.a
 
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
+			  include					\
 			  stack
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))

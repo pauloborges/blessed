@@ -27,8 +27,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "timer.h"
-#include "log.h"
+#include <blessed/timer.h>
+#include <blessed/log.h>
 
 #define TIMER1_MS			1000
 #define TIMER2_MS			250
