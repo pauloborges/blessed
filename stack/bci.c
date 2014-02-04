@@ -35,6 +35,7 @@
 
 static const bdaddr_t *laddr;
 static uint8_t adv_data[ADVDATA_LEN];
+static uint8_t adv_data_len;
 
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 {
@@ -46,6 +47,7 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 
 	memset(adv_data, 0, ADVDATA_LEN);
 	memcpy(adv_data, data, len);
+	adv_data_len = len;
 
 	/* XXX: If the radio is already advertising, the advertising data
 	 * should be refreshed? If yes, then we need to notify the link layer.
@@ -59,7 +61,7 @@ int16_t bci_set_advertise_enable(uint8_t enable)
 	if (!enable)
 		return ll_advertise_stop();
 
-	return ll_advertise_start(ADV_NONCONN_UNDIR, adv_data, sizeof(adv_data));
+	return ll_advertise_start(ADV_NONCONN_UNDIR, adv_data, adv_data_len);
 }
 
 int16_t bci_init(const bdaddr_t *addr)
