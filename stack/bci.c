@@ -35,7 +35,7 @@
 #include "ll.h"
 
 static const bdaddr_t *laddr;
-static uint8_t adv_data[ADVDATA_LEN];
+static uint8_t adv_data[BCI_ADV_MTU_DATA];
 static uint8_t adv_data_len;
 
 static struct bci_adv_params adv_params = {
@@ -85,10 +85,10 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 	if (data == NULL)
 		return -EINVAL;
 
-	if (len > ADVDATA_LEN)
+	if (len > BCI_ADV_MTU_DATA)
 		return -EINVAL;
 
-	memset(adv_data, 0, ADVDATA_LEN);
+	memset(adv_data, 0, BCI_ADV_MTU_DATA);
 	memcpy(adv_data, data, len);
 	adv_data_len = len;
 

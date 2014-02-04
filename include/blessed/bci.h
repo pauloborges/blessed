@@ -27,6 +27,9 @@
 #define BCI_ENABLE			1
 #define BCI_DISABLE			0
 
+/* HCI Funcional Specification Section 7.8.7, Core 4.1 page 1251 */
+#define BCI_ADV_MTU_DATA		31
+
 /* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
 #define BCI_ADV_INTERVAL_MIN_CONN	20
 #define BCI_ADV_INTERVAL_MIN_NONCONN	100
