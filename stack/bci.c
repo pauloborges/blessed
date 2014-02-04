@@ -62,7 +62,9 @@ int16_t bci_set_advertise_enable(uint8_t enable)
 	if (!enable)
 		return ll_advertise_stop();
 
-	return ll_advertise_start(ADV_NONCONN_UNDIR, adv_data, adv_data_len);
+	return ll_advertise_start(ADV_NONCONN_UNDIR,
+						LL_ADV_INTERVAL_MIN_NONCONN,
+						adv_data, adv_data_len);
 }
 
 int16_t bci_init(const bdaddr_t *addr)

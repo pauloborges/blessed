@@ -101,7 +101,8 @@ static void t_adv_event_cb(void *user_data)
 	t_adv_pdu_cb(NULL);
 }
 
-int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
+int16_t ll_advertise_start(adv_type_t type, uint16_t interval,
+					const uint8_t *data, uint8_t len)
 {
 	int16_t err_code;
 
@@ -113,6 +114,10 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 	switch (type) {
 
 	case ADV_NONCONN_UNDIR:
+		if (interval < LL_ADV_INTERVAL_MIN_NONCONN
+					|| interval > LL_ADV_INTERVAL_MAX)
+			return -EINVAL;
+
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
 		pdu_adv.tx_add = laddr->type;
 		pdu_adv.length = len + sizeof(laddr->addr);
@@ -120,7 +125,7 @@ int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len)
 		memcpy(pdu_adv.payload, laddr->addr, sizeof(laddr->addr));
 		memcpy(pdu_adv.payload + sizeof(laddr->addr), data, len);
 
-		t_adv_event_interval = 100; /* <= 1024ms, Sec 4.4.2.2 pag 2528 */
+		t_adv_event_interval = interval;
 		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
 
 		break;

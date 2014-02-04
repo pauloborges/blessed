@@ -42,7 +42,8 @@ static uint8_t data[] = { 0x0F, 0x09, 0x62, 0x6C, 0x65, 0x73, 0x73, 0x65, 0x64,
 int main(void)
 {
 	ll_init(&addr);
-	ll_advertise_start(ADV_NONCONN_UNDIR, data, sizeof(data));
+	ll_advertise_start(ADV_NONCONN_UNDIR, LL_ADV_INTERVAL_MIN_NONCONN,
+							data, sizeof(data));
 
 	while (1);
 

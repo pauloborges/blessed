@@ -38,7 +38,13 @@
 /* Link Layer specification Section 2.3.1, Core 4.1 page 2506 */
 #define LL_ADV_MTU_DATA			(LL_ADV_MTU_PAYLOAD - BDADDR_LEN)
 
+/* Link Layer specification Section 4.4.2.2, Core 4.1 page 2528 */
+#define LL_ADV_INTERVAL_MIN_CONN	20	/* 20 ms */
+#define LL_ADV_INTERVAL_MIN_NONCONN	100	/* 100 ms */
+#define LL_ADV_INTERVAL_MAX		10240	/* 10.24 s */
+
 int16_t ll_init(const bdaddr_t *addr);
 
-int16_t ll_advertise_start(adv_type_t type, const uint8_t *data, uint8_t len);
+int16_t ll_advertise_start(adv_type_t type, uint16_t interval,
+					const uint8_t *data, uint8_t len);
 int16_t ll_advertise_stop(void);
