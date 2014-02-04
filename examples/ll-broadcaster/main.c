@@ -43,7 +43,7 @@ int main(void)
 {
 	ll_init(&addr);
 	ll_advertise_start(ADV_NONCONN_UNDIR, LL_ADV_INTERVAL_MIN_NONCONN,
-							data, sizeof(data));
+					LL_ADV_CH_ALL, data, sizeof(data));
 
 	while (1);
 

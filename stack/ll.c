@@ -76,8 +76,13 @@ typedef struct ll_pdu_adv {
 static const bdaddr_t *laddr;
 static ll_states_t current_state;
 
+#define ADV_CH_IDX_37		0
+#define ADV_CH_IDX_38		1
+#define ADV_CH_IDX_39		2
+
 static uint8_t adv_chs[] = { 37, 38, 39 };
-static uint8_t adv_ch_idx = 0;
+static uint8_t adv_ch_idx;
+static uint8_t adv_ch_map;
 
 static int16_t t_adv_event;
 static uint32_t t_adv_event_interval;
@@ -86,28 +91,57 @@ static uint32_t t_adv_pdu_interval;
 
 static ll_pdu_adv_t pdu_adv;
 
+static __inline uint8_t first_adv_ch_idx(void)
+{
+	if (adv_ch_map & LL_ADV_CH_37)
+		return ADV_CH_IDX_37;
+	else if (adv_ch_map & LL_ADV_CH_38)
+		return ADV_CH_IDX_38;
+	else
+		return ADV_CH_IDX_39;
+}
+
+static __inline int16_t inc_adv_ch_idx(void)
+{
+	if ((adv_ch_map & LL_ADV_CH_38) &&
+					(adv_ch_idx == ADV_CH_IDX_37))
+		adv_ch_idx = ADV_CH_IDX_38;
+	else if ((adv_ch_map & LL_ADV_CH_39) &&
+					(adv_ch_idx < ADV_CH_IDX_39))
+		adv_ch_idx = ADV_CH_IDX_39;
+	else
+		return -1;
+
+	return 0;
+}
+
 static void t_adv_pdu_cb(void *user_data)
 {
-	radio_send(adv_chs[adv_ch_idx++], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
+	radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
 
-	if (adv_ch_idx < 3)
+	if (!inc_adv_ch_idx())
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
 }
 
 static void t_adv_event_cb(void *user_data)
 {
-	adv_ch_idx = 0;
+	adv_ch_idx = first_adv_ch_idx();
 	t_adv_pdu_cb(NULL);
 }
 
-int16_t ll_advertise_start(adv_type_t type, uint16_t interval,
+int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
 					const uint8_t *data, uint8_t len)
 {
 	int16_t err_code;
 
 	if (current_state != LL_STATE_STANDBY)
 		return -ENOREADY;
+
+	if (!chmap || (chmap & !LL_ADV_CH_ALL))
+		return -EINVAL;
+
+	adv_ch_map = chmap;
 
 	memset(&pdu_adv, 0, sizeof(pdu_adv));
 

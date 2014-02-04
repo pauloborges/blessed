@@ -43,8 +43,15 @@
 #define LL_ADV_INTERVAL_MIN_NONCONN	100	/* 100 ms */
 #define LL_ADV_INTERVAL_MAX		10240	/* 10.24 s */
 
+/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1248 */
+#define LL_ADV_CH_37			(1 << 0)
+#define LL_ADV_CH_38			(1 << 1)
+#define LL_ADV_CH_39			(1 << 2)
+#define LL_ADV_CH_ALL			(LL_ADV_CH_37 | LL_ADV_CH_38 |	\
+ 							LL_ADV_CH_39)
+
 int16_t ll_init(const bdaddr_t *addr);
 
-int16_t ll_advertise_start(adv_type_t type, uint16_t interval,
+int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
 					const uint8_t *data, uint8_t len);
 int16_t ll_advertise_stop(void);
