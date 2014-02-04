@@ -26,7 +26,6 @@
 
 /* Blestack API entrypoint */
 
-#include <blessed/common.h>
 #include <blessed/bdaddr.h>
 #include <blessed/bci.h>
 

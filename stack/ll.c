@@ -31,7 +31,6 @@
 #include <blessed/errcodes.h>
 #include <blessed/log.h>
 #include <blessed/timer.h>
-#include <blessed/common.h>
 #include <blessed/bdaddr.h>
 
 #include "radio.h"
