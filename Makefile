@@ -1,4 +1,4 @@
-# BLEStack Makefile
+# blessed Makefile
 
 -include Makefile.config
 
@@ -12,7 +12,7 @@ PLATFORM_PATH		= platform/$(PLATFORM)
 CONFIGS			= $(addprefix -D, $(-*-command-variables-*-))
 
 BUILD_PATH		= build
-LIB_TARGET		= $(BUILD_PATH)/libblestack.a
+LIB_TARGET		= $(BUILD_PATH)/libblessed.a
 
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 			  stack

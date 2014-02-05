@@ -6,11 +6,11 @@ ifeq ($(PLATFORM),)
         $(error PLATFORM is not defined)
 endif
 
-ifeq ($(BLESTACK_PATH),)
-	BLESTACK_PATH = ../..
+ifeq ($(BLESSED_PATH),)
+	BLESSED_PATH = ../..
 endif
 
-PLATFORM_PATH		= $(BLESTACK_PATH)/platform/$(PLATFORM)
+PLATFORM_PATH		= $(BLESSED_PATH)/platform/$(PLATFORM)
 include $(PLATFORM_PATH)/Makefile.platform
 
 ifeq ($(PROJECT_TARGET),)
@@ -18,12 +18,12 @@ ifeq ($(PROJECT_TARGET),)
 endif
 
 BUILD_PATH		= build
-BLESTACK_BUILD		= $(BLESTACK_PATH)/$(BUILD_PATH)
-LIBBLESTACK		= $(BLESTACK_BUILD)/libblestack.a
+BLESSED_BUILD		= $(BLESSED_PATH)/$(BUILD_PATH)
+LIBBLESSED		= $(BLESSED_BUILD)/libblessed.a
 
 INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 			  $(PROJECT_INCLUDE_PATHS)			\
-			  $(BLESTACK_PATH)/stack
+			  $(BLESSED_PATH)/stack
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 
@@ -55,7 +55,7 @@ $(BUILD_PATH)/$(PROJECT_TARGET).bin: $(BUILD_PATH)/$(PROJECT_TARGET).out
 
 $(BUILD_PATH)/$(PROJECT_TARGET).out: $(C_OBJ_FILES) $(ASM_OBJ_FILES)
 	@echo "  LD\t$@"
-	@$(LD) $(LDFLAGS) $(C_OBJ_FILES) $(ASM_OBJ_FILES) $(LIBBLESTACK) -o $@
+	@$(LD) $(LDFLAGS) $(C_OBJ_FILES) $(ASM_OBJ_FILES) $(LIBBLESSED) -o $@
 	@echo " SIZE\t$@"
 	@$(SIZE) $@
 
