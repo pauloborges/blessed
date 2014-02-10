@@ -38,6 +38,12 @@ static const bdaddr_t *laddr;
 static uint8_t adv_data[ADVDATA_LEN];
 static uint8_t adv_data_len;
 
+static struct bci_adv_params adv_params = {
+	.type = ADV_NONCONN_UNDIR,
+	.interval = LL_ADV_INTERVAL_MIN_NONCONN,
+	.chmap = LL_ADV_CH_ALL
+};
+
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 {
 	if (data == NULL)
@@ -62,9 +68,8 @@ int16_t bci_set_advertise_enable(uint8_t enable)
 	if (!enable)
 		return ll_advertise_stop();
 
-	return ll_advertise_start(ADV_NONCONN_UNDIR,
-						LL_ADV_INTERVAL_MIN_NONCONN,
-						LL_ADV_CH_ALL, adv_data,
+	return ll_advertise_start(adv_params.type, adv_params.interval,
+						adv_params.chmap, adv_data,
 						adv_data_len);
 }
 

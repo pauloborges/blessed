@@ -27,6 +27,12 @@
 #define BCI_ENABLE			1
 #define BCI_DISABLE			0
 
+struct bci_adv_params {
+	adv_type_t type;
+	uint16_t interval;
+	uint8_t chmap;
+};
+
 int16_t bci_init(const bdaddr_t *addr);
 
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);
