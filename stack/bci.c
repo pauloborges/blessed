@@ -40,13 +40,44 @@ static uint8_t adv_data_len;
 
 static struct bci_adv_params adv_params = {
 	.type = ADV_NONCONN_UNDIR,
-	.interval = LL_ADV_INTERVAL_MIN_NONCONN,
+	.interval = BCI_ADV_INTERVAL_MIN_NONCONN,
 	.chmap = LL_ADV_CH_ALL
 };
 
 void bci_get_advertising_params(struct bci_adv_params *params)
 {
 	memcpy(params, &adv_params, sizeof(adv_params));
+}
+
+int16_t bci_set_advertising_params(const struct bci_adv_params *params)
+{
+	if (!params->chmap || (!params->chmap & !BCI_ADV_CH_ALL))
+		return -EINVAL;
+
+	if (params->interval > BCI_ADV_INTERVAL_MAX)
+		return -EINVAL;
+
+	/* XXX: Should the lib return an error when the user uses a not yet
+	 * implemented type? If yes, fix the code below.
+	 */
+	switch (params->type) {
+	case ADV_NONCONN_UNDIR:
+	case ADV_SCAN_UNDIR:
+		if (params->interval < BCI_ADV_INTERVAL_MIN_NONCONN)
+			return -EINVAL;
+		break;
+	case ADV_CONN_UNDIR:
+	case ADV_CONN_DIR_LOW:
+		if (params->interval < BCI_ADV_INTERVAL_MIN_CONN)
+			return -EINVAL;
+		break;
+	case ADV_CONN_DIR_HIGH:
+		break;
+	}
+
+	memcpy(&adv_params, params, sizeof(adv_params));
+
+	return 0;
 }
 
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)

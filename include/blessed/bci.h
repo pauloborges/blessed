@@ -27,6 +27,18 @@
 #define BCI_ENABLE			1
 #define BCI_DISABLE			0
 
+/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
+#define BCI_ADV_INTERVAL_MIN_CONN	20
+#define BCI_ADV_INTERVAL_MIN_NONCONN	100
+#define BCI_ADV_INTERVAL_MAX		10240	/* 10.24 s */
+
+/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1248 */
+#define BCI_ADV_CH_37			(1 << 0)
+#define BCI_ADV_CH_38			(1 << 1)
+#define BCI_ADV_CH_39			(1 << 2)
+#define BCI_ADV_CH_ALL			(BCI_ADV_CH_37 | BCI_ADV_CH_38	\
+ 							| BCI_ADV_CH_39)
+
 struct bci_adv_params {
 	adv_type_t type;
 	uint16_t interval;
@@ -37,5 +49,6 @@ int16_t bci_init(const bdaddr_t *addr);
 
 void bci_get_advertising_params(struct bci_adv_params *params);
 
+int16_t bci_set_advertising_params(const struct bci_adv_params *params);
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t bci_set_advertise_enable(uint8_t enable);
