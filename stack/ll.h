@@ -50,8 +50,19 @@
 #define LL_ADV_CH_ALL			(LL_ADV_CH_37 | LL_ADV_CH_38 |	\
  							LL_ADV_CH_39)
 
+/* Link Layer specification Section 2.3, Core 4.1 page 2505 */
+typedef enum ll_pdu {
+	LL_PDU_ADV_IND,
+	LL_PDU_ADV_DIRECT_IND,
+	LL_PDU_ADV_NONCONN_IND,
+	LL_PDU_SCAN_REQ,
+	LL_PDU_SCAN_RSP,
+	LL_PDU_CONNECT_REQ,
+	LL_PDU_ADV_SCAN_IND
+} ll_pdu_t;
+
 int16_t ll_init(const bdaddr_t *addr);
 
-int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
+int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
 					const uint8_t *data, uint8_t len);
 int16_t ll_advertise_stop(void);

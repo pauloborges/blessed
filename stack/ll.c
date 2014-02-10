@@ -52,17 +52,6 @@ typedef enum ll_states {
 	LL_CONNECTION_SCANNING,
 } ll_states_t;
 
-/* Link Layer specification Section 2.3, Core 4.1 page 2505 */
-typedef enum ll_pdu_type {
-	LL_PDU_ADV_IND,		/* connectable undirected */
-	LL_PDU_ADV_DIRECT_IND,	/* connectable directed */
-	LL_PDU_ADV_NONCONN_IND,	/* non-connectable undirected */
-	LL_PDU_SCAN_REQ,
-	LL_PDU_SCAN_RSP,
-	LL_PDU_CONNECT_REQ,
-	LL_PDU_ADV_SCAN_IND	/* scannable undirected */
-} ll_pdu_type_t;
-
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
 typedef struct ll_pdu_adv {
 	uint8_t pdu_type:4;
@@ -131,7 +120,7 @@ static void t_adv_event_cb(void *user_data)
 	t_adv_pdu_cb(NULL);
 }
 
-int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
+int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
 					const uint8_t *data, uint8_t len)
 {
 	int16_t err_code;
@@ -147,8 +136,12 @@ int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
 	memset(&pdu_adv, 0, sizeof(pdu_adv));
 
 	switch (type) {
-
-	case ADV_NONCONN_UNDIR:
+	case LL_PDU_ADV_IND:
+	case LL_PDU_ADV_DIRECT_IND:
+	case LL_PDU_ADV_SCAN_IND:
+		/* Not implemented */
+		return -EINVAL;
+	case LL_PDU_ADV_NONCONN_IND:
 		if (interval < LL_ADV_INTERVAL_MIN_NONCONN
 					|| interval > LL_ADV_INTERVAL_MAX)
 			return -EINVAL;
@@ -164,14 +157,9 @@ int16_t ll_advertise_start(adv_type_t type, uint16_t interval, uint8_t chmap,
 		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
 
 		break;
-
-	case ADV_CONN_UNDIR:
-	case ADV_CONN_DIR_HIGH:
-	case ADV_SCAN_UNDIR:
-	case ADV_CONN_DIR_LOW:
-		/* Not implemented */
+	default:
+		/* Invalid PDU */
 		return -EINVAL;
-		break;
 	}
 
 	err_code = timer_start(t_adv_event, t_adv_event_interval, NULL);

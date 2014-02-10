@@ -40,7 +40,7 @@ static uint8_t adv_data[BCI_ADV_MTU_DATA];
 static uint8_t adv_data_len;
 
 static struct bci_adv_params adv_params = {
-	.type = ADV_NONCONN_UNDIR,
+	.type = BCI_ADV_NONCONN_UNDIR,
 	.interval = BCI_ADV_INTERVAL_MIN_NONCONN,
 	.chmap = LL_ADV_CH_ALL
 };
@@ -62,17 +62,17 @@ int16_t bci_set_advertising_params(const struct bci_adv_params *params)
 	 * implemented type? If yes, fix the code below.
 	 */
 	switch (params->type) {
-	case ADV_NONCONN_UNDIR:
-	case ADV_SCAN_UNDIR:
+	case BCI_ADV_NONCONN_UNDIR:
+	case BCI_ADV_SCAN_UNDIR:
 		if (params->interval < BCI_ADV_INTERVAL_MIN_NONCONN)
 			return -EINVAL;
 		break;
-	case ADV_CONN_UNDIR:
-	case ADV_CONN_DIR_LOW:
+	case BCI_ADV_CONN_UNDIR:
+	case BCI_ADV_CONN_DIR_LOW:
 		if (params->interval < BCI_ADV_INTERVAL_MIN_CONN)
 			return -EINVAL;
 		break;
-	case ADV_CONN_DIR_HIGH:
+	case BCI_ADV_CONN_DIR_HIGH:
 		break;
 	}
 
@@ -100,14 +100,45 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 	return 0;
 }
 
+static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu) {
+	if (pdu == NULL)
+		return -EINVAL;
+
+	switch (type) {
+	case BCI_ADV_CONN_UNDIR:
+		*pdu = LL_PDU_ADV_IND;
+		break;
+	case BCI_ADV_CONN_DIR_HIGH:
+	case BCI_ADV_CONN_DIR_LOW:
+		*pdu = LL_PDU_ADV_DIRECT_IND;
+		break;
+	case BCI_ADV_NONCONN_UNDIR:
+		*pdu = LL_PDU_ADV_NONCONN_IND;
+		break;
+	case BCI_ADV_SCAN_UNDIR:
+		*pdu = LL_PDU_ADV_SCAN_IND;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int16_t bci_set_advertise_enable(uint8_t enable)
 {
+	int16_t err;
+	ll_pdu_t pdu;
+
 	if (!enable)
 		return ll_advertise_stop();
 
-	return ll_advertise_start(adv_params.type, adv_params.interval,
-						adv_params.chmap, adv_data,
-						adv_data_len);
+	err = adv_type_to_pdu(adv_params.type, &pdu);
+	if (err < 0)
+		return err;
+
+	return ll_advertise_start(pdu, adv_params.interval, adv_params.chmap,
+						adv_data, adv_data_len);
 }
 
 int16_t bci_init(const bdaddr_t *addr)

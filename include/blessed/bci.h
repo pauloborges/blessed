@@ -42,8 +42,17 @@
 #define BCI_ADV_CH_ALL			(BCI_ADV_CH_37 | BCI_ADV_CH_38	\
  							| BCI_ADV_CH_39)
 
+/* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
+typedef enum bci_adv {
+	BCI_ADV_CONN_UNDIR,	/* connectable undirected */
+	BCI_ADV_CONN_DIR_HIGH,	/* connectable directed (high duty cycle) */
+	BCI_ADV_SCAN_UNDIR,	/* scannable undirected */
+	BCI_ADV_NONCONN_UNDIR,	/* non-connectable undirected */
+	BCI_ADV_CONN_DIR_LOW,	/* connectable directed (low duty cycle) */
+} bci_adv_t;
+
 struct bci_adv_params {
-	adv_type_t type;
+	bci_adv_t type;
 	uint16_t interval;
 	uint8_t chmap;
 };
