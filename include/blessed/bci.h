@@ -81,3 +81,4 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t bci_set_advertise_enable(uint8_t enable);
 
 int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...);
+bool bci_ad_get(const uint8_t *buffer, uint8_t len, bci_ad_t type, ...);
