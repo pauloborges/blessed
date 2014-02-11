@@ -251,8 +251,9 @@ bool bci_ad_get(const uint8_t *buffer, uint8_t len, bci_ad_t type, ...)
 	const uint8_t *data = buffer;
 	va_list args;
 	unsigned int *flags = NULL, *appear = NULL;
-	int8_t *tx = NULL;
+	int8_t *tx = NULL, *mftlen = NULL;
 	char *shortname = NULL, *fullname = NULL;
+	uint8_t *mft = NULL;
 	uint8_t grouplen;
 
 	/* Parsing wanted types */
@@ -274,6 +275,10 @@ bool bci_ad_get(const uint8_t *buffer, uint8_t len, bci_ad_t type, ...)
 			break;
 		case BCI_AD_NAME_COMPLETE:
 			fullname = va_arg(args, char *);
+			break;
+		case BCI_AD_MFT_DATA:
+			mft = va_arg(args, uint8_t *);
+			mftlen = va_arg(args, int8_t *);
 			break;
 		default:
 			break;
@@ -325,6 +330,14 @@ bool bci_ad_get(const uint8_t *buffer, uint8_t len, bci_ad_t type, ...)
 
 			strncpy(fullname, (const char *) (data + 2),
 								grouplen - 1);
+			break;
+		case BCI_AD_MFT_DATA:
+			if (!mft || !mftlen)
+				break;
+
+			memcpy(mft, data + 2, grouplen - 1);
+			*mftlen = grouplen - 1;
+
 			break;
 		default:
 			return false;
