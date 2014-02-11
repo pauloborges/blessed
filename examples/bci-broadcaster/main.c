@@ -33,11 +33,9 @@
 #define BLE_ADDRESS_TYPE		BDADDR_TYPE_RANDOM
 #define BLE_ADDRESS			{ BLE_ADDRESS_ADDR, BLE_ADDRESS_TYPE }
 
-/* AD structure:
- * LEN: 15 bytes | LOCAL NAME: 0x09 | DATA: "blessed device"
- */
-static uint8_t data[] = { 0x0F, 0x09, 0x62, 0x6C, 0x65, 0x73, 0x73, 0x65, 0x64,
-			  0x20, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65 };
+
+static uint8_t data[BCI_ADV_MTU_DATA];
+static uint8_t len;
 
 int main(void)
 {
@@ -48,7 +46,10 @@ int main(void)
 	if (status < 0)
 		return status;
 
-	bci_set_advertising_data(data, sizeof(data));
+	len = bci_ad_put(data, BCI_AD_NAME_COMPLETE, "blessed device",
+							BCI_AD_INVALID);
+
+	bci_set_advertising_data(data, len);
 	bci_set_advertise_enable(BCI_ENABLE);
 
 	while (1);
