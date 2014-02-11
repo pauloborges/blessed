@@ -69,7 +69,8 @@ typedef enum {
 	BCI_AD_NAME_SHORT	= 0x08, /* Shortened local name */
 	BCI_AD_NAME_COMPLETE	= 0x09, /* Complete local name */
 	BCI_AD_TX_POWER		= 0x0A, /* Transmit power level */
-	BCI_AD_GAP_APPEARANCE	= 0x19  /* GAP appearance */
+	BCI_AD_GAP_APPEARANCE	= 0x19, /* GAP appearance */
+	BCI_AD_MFT_DATA		= 0xff,	/* Manufactorer specific data */
 } bci_ad_t;
 
 int16_t bci_init(const bdaddr_t *addr);

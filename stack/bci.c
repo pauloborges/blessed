@@ -180,6 +180,7 @@ int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...)
 	va_list args;
 	uint8_t *data = buffer;
 	const char *str;
+	const uint8_t *ptr;
 	uint16_t u16;
 	size_t arglen;
 
@@ -222,7 +223,17 @@ int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...)
 			strncpy((char *) data, str, arglen);
 			data += arglen;
 			break;
-
+		/* Fixed size array */
+		case BCI_AD_MFT_DATA:
+			ptr = va_arg(args, const uint8_t *);
+			arglen = va_arg(args, int);
+			*data = arglen + 1; /* Group length */
+			data++;
+			*data = type;
+			data++;
+			memcpy(data, ptr, arglen);
+			data += arglen;
+			break;
 		default:
 			return -EINVAL;
 		}
