@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <blessed/errcodes.h>
 #include <blessed/bdaddr.h>
@@ -171,4 +172,64 @@ int16_t bci_init(const bdaddr_t *addr)
 	laddr = addr;
 
 	return 0;
+}
+
+int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...)
+{
+	va_list args;
+	uint8_t *data = buffer;
+	const char *str;
+	uint16_t u16;
+	size_t arglen;
+
+	va_start(args, type);
+
+	while (type != BCI_AD_INVALID) {
+		switch (type) {
+		/* 1 octet */
+		case BCI_AD_FLAGS:
+		case BCI_AD_TX_POWER:
+			*data = 2;		/* Group length */
+			data++;
+			*data = type;
+			data++;
+			*data = va_arg(args, unsigned int);
+			data++;
+			break;
+
+		/* 2 octets */
+		case BCI_AD_GAP_APPEARANCE:
+			*data = 3;		/* Group length */
+			data++;
+			*data = type;
+			data++;
+			u16 = va_arg(args, unsigned int);
+			*data = u16 & 0x00ff;
+			data++;
+			*data = (u16 >> 1 )& 0x00ff;
+			data++;
+			break;
+		/* Strings */
+		case BCI_AD_NAME_SHORT:
+		case BCI_AD_NAME_COMPLETE:
+			str = va_arg(args, const char *);
+			arglen = strlen(str);
+			*data = arglen + 1; /* Group length */
+			data++;
+			*data = type;
+			data++;
+			strncpy((char *) data, str, arglen);
+			data += arglen;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+
+		type = va_arg(args, int);
+	}
+	va_end(args);
+
+	/* Returns the amount of octets written */
+	return data - buffer;
 }

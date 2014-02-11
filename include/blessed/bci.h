@@ -57,6 +57,21 @@ struct bci_adv_params {
 	uint8_t chmap;
 };
 
+/*
+ * From Bluetooth SIG GAP assigned numbers
+ * https://www.bluetooth.org/en-us/specification/assigned-numbers/\
+ * generic-access-profile
+ */
+
+typedef enum {
+	BCI_AD_INVALID		= 0x00,
+	BCI_AD_FLAGS		= 0x01, /* AD Flags */
+	BCI_AD_NAME_SHORT	= 0x08, /* Shortened local name */
+	BCI_AD_NAME_COMPLETE	= 0x09, /* Complete local name */
+	BCI_AD_TX_POWER		= 0x0A, /* Transmit power level */
+	BCI_AD_GAP_APPEARANCE	= 0x19  /* GAP appearance */
+} bci_ad_t;
+
 int16_t bci_init(const bdaddr_t *addr);
 
 void bci_get_advertising_params(struct bci_adv_params *params);
@@ -64,3 +79,5 @@ void bci_get_advertising_params(struct bci_adv_params *params);
 int16_t bci_set_advertising_params(const struct bci_adv_params *params);
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t bci_set_advertise_enable(uint8_t enable);
+
+int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...);
