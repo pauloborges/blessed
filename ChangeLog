@@ -1,0 +1,5 @@
+ver 0.1:
+        Add broadcaster role
+	Support for NRF51822
+	Radio, LL, and BCI APIs
+	Examples: iBeacon, broadcaster and observer.
