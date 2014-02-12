@@ -115,7 +115,8 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 	return 0;
 }
 
-static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu) {
+static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu)
+{
 	if (pdu == NULL)
 		return -EINVAL;
 
