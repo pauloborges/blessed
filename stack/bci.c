@@ -300,7 +300,7 @@ bool bci_ad_get(const uint8_t *buffer, uint8_t len, bci_ad_t type, ...)
 
 		/* Invalid memory access? */
 		if ((data + grouplen) > (buffer + len))
-			break;
+			return false;
 
 		switch (*(data + 1)) {
 		case BCI_AD_FLAGS:
