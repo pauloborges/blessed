@@ -99,6 +99,11 @@ int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 	return ll_set_advertising_data(data, len);
 }
 
+int16_t bci_set_scan_response_data(const uint8_t *data, uint8_t len)
+{
+	return ll_set_scan_response_data(data, len);
+}
+
 static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu)
 {
 	if (pdu == NULL)
