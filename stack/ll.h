@@ -63,6 +63,6 @@ typedef enum ll_pdu {
 
 int16_t ll_init(const bdaddr_t *addr);
 
-int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
-					const uint8_t *data, uint8_t len);
+int16_t ll_set_advertising_data(const uint8_t *data, uint8_t len);
+int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap);
 int16_t ll_advertise_stop(void);

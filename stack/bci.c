@@ -51,8 +51,6 @@ STATIC_ASSERT(BCI_ADV_CH_39 == LL_ADV_CH_39);
 STATIC_ASSERT(BCI_ADV_CH_ALL == LL_ADV_CH_ALL);
 
 static const bdaddr_t *laddr;
-static uint8_t adv_data[BCI_ADV_MTU_DATA];
-static uint8_t adv_data_len;
 
 static struct bci_adv_params adv_params = {
 	.type = BCI_ADV_NONCONN_UNDIR,
@@ -98,21 +96,7 @@ int16_t bci_set_advertising_params(const struct bci_adv_params *params)
 
 int16_t bci_set_advertising_data(const uint8_t *data, uint8_t len)
 {
-	if (data == NULL)
-		return -EINVAL;
-
-	if (len > BCI_ADV_MTU_DATA)
-		return -EINVAL;
-
-	memset(adv_data, 0, BCI_ADV_MTU_DATA);
-	memcpy(adv_data, data, len);
-	adv_data_len = len;
-
-	/* XXX: If the radio is already advertising, the advertising data
-	 * should be refreshed? If yes, then we need to notify the link layer.
-	 */
-
-	return 0;
+	return ll_set_advertising_data(data, len);
 }
 
 static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu)
@@ -153,8 +137,7 @@ int16_t bci_set_advertise_enable(uint8_t enable)
 	if (err < 0)
 		return err;
 
-	return ll_advertise_start(pdu, adv_params.interval, adv_params.chmap,
-						adv_data, adv_data_len);
+	return ll_advertise_start(pdu, adv_params.interval, adv_params.chmap);
 }
 
 int16_t bci_init(const bdaddr_t *addr)

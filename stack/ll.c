@@ -119,8 +119,7 @@ static void t_adv_event_cb(void *user_data)
 	t_adv_pdu_cb(NULL);
 }
 
-int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
-					const uint8_t *data, uint8_t len)
+int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 {
 	int16_t err_code;
 
@@ -131,8 +130,6 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
 		return -EINVAL;
 
 	adv_ch_map = chmap;
-
-	memset(&pdu_adv, 0, sizeof(pdu_adv));
 
 	switch (type) {
 	case LL_PDU_ADV_IND:
@@ -146,11 +143,6 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap,
 			return -EINVAL;
 
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-		pdu_adv.tx_add = laddr->type;
-		pdu_adv.length = len + sizeof(laddr->addr);
-
-		memcpy(pdu_adv.payload, laddr->addr, sizeof(laddr->addr));
-		memcpy(pdu_adv.payload + sizeof(laddr->addr), data, len);
 
 		t_adv_event_interval = interval;
 		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
@@ -194,6 +186,31 @@ int16_t ll_advertise_stop()
 	return 0;
 }
 
+int16_t ll_set_advertising_data(const uint8_t *data, uint8_t len)
+{
+	if (current_state != LL_STATE_STANDBY)
+		return -EBUSY;
+
+	if (data == NULL)
+		return -EINVAL;
+
+	if (len > LL_ADV_MTU_DATA)
+		return -EINVAL;
+
+	memcpy(pdu_adv.payload + sizeof(laddr->addr), data, len);
+	pdu_adv.length = sizeof(laddr->addr) + len;
+
+	return 0;
+}
+
+static void init_adv_pdu(void)
+{
+	pdu_adv.tx_add = laddr->type;
+	memcpy(pdu_adv.payload, laddr->addr, sizeof(laddr->addr));
+
+	ll_set_advertising_data(NULL, 0);
+}
+
 int16_t ll_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
@@ -223,6 +240,8 @@ int16_t ll_init(const bdaddr_t *addr)
 
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
+
+	init_adv_pdu();
 
 	return 0;
 }
