@@ -85,11 +85,10 @@ int16_t log_print(const char *format, ...)
 	while (state == BUSY);
 
 	va_start(args, format);
-	vsnprintf((char *) buffer, BUFFER_LEN, format, args);
+	len = vsnprintf((char *) buffer, BUFFER_LEN, format, args);
 	va_end(args);
 
 	pos = 0;
-	len = strlen((char *) buffer);
 	state = BUSY;
 
 	tx_next_byte();
