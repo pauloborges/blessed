@@ -53,13 +53,15 @@ typedef enum ll_states {
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
 typedef struct ll_pdu_adv {
-	uint8_t pdu_type:4;
-	uint8_t _rfu_0:2;
-	uint8_t tx_add:1;
-	uint8_t rx_add:1;
-	uint8_t length:6; /* 6 <= length <= 37 */
-	uint8_t _rfu_1:2;
-	uint8_t payload[LL_ADV_MTU_PAYLOAD];
+	uint8_t		pdu_type:4;	/* See ll_pdu_t */
+	uint8_t		_rfu_0:2;	/* Reserved for future use */
+	uint8_t		tx_add:1;	/* public (0) or random (1) */
+	uint8_t		rx_add:1;	/* public (0) or random (1) */
+
+	uint8_t		length:6;	/* 6 <= payload length <= 37 */
+	uint8_t		_rfu_1:2;	/* Reserved for future use */
+
+	uint8_t		payload[LL_ADV_MTU_PAYLOAD];
 } __attribute__ ((packed)) ll_pdu_adv_t;
 
 static const bdaddr_t *laddr;
