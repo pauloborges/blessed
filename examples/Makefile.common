@@ -28,7 +28,7 @@ INCLUDE_PATHS		= $(PLATFORM_INCLUDE_PATHS)			\
 
 INCLUDES		= $(addprefix -I, $(INCLUDE_PATHS))
 
-CFLAGS			= $(PLATFORM_CFLAGS)				\
+CFLAGS			= -O2 -Wall $(PLATFORM_CFLAGS)			\
 			  $(PROJECT_CFLAGS)				\
 			  $(INCLUDES)
 
