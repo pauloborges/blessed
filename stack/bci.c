@@ -133,16 +133,16 @@ static ll_pdu_t adv_type_to_pdu(bci_adv_t type, ll_pdu_t *pdu)
 int16_t bci_set_advertise_enable(uint8_t enable)
 {
 	int16_t err;
-	ll_pdu_t pdu;
+	ll_pdu_t type = LL_PDU_ADV_IND;
 
 	if (!enable)
 		return ll_advertise_stop();
 
-	err = adv_type_to_pdu(adv_params.type, &pdu);
+	err = adv_type_to_pdu(adv_params.type, &type);
 	if (err < 0)
 		return err;
 
-	return ll_advertise_start(pdu, adv_params.interval, adv_params.chmap);
+	return ll_advertise_start(type, adv_params.interval, adv_params.chmap);
 }
 
 int16_t bci_init(const bdaddr_t *addr)
