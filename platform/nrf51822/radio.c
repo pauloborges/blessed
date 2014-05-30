@@ -81,8 +81,10 @@ static __inline int16_t common_init(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	if (!(status & STATUS_INITIALIZED))
 		return -ENOREADY;
 
+#if 0
 	if (status & STATUS_BUSY)
 		return -EBUSY;
+#endif
 
 	freq = ch2freq(ch);
 
