@@ -46,10 +46,10 @@
 #define BUSY				2
 
 #if CONFIG_LOG_ENABLE
-static uint16_t pos;
-static uint16_t len;
+static volatile uint16_t pos;
+static volatile uint16_t len;
 static uint8_t buffer[BUFFER_LEN];
-static uint8_t state = UNINITIALIZED;
+static volatile uint8_t state = UNINITIALIZED;
 
 static __inline void tx_next_byte(void)
 {
