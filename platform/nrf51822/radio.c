@@ -92,7 +92,7 @@ static __inline int16_t common_init(uint8_t ch, uint32_t aa,
 	NRF_RADIO->DATAWHITEIV = ch & 0x3F;
 	NRF_RADIO->FREQUENCY = freq;
 	NRF_RADIO->BASE0 = (aa << 8) & 0xFFFFFF00;
-	NRF_RADIO->PREFIX0 = (aa >> 24) & 0x000000FF;
+	NRF_RADIO->PREFIX0 = (aa >> 24) & RADIO_PREFIX0_AP0_Msk;
 	NRF_RADIO->CRCINIT = crcinit;
 
 	return 0;
