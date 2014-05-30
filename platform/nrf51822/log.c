@@ -63,14 +63,10 @@ static __inline void tx_next_byte(void)
 
 static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
 {
-	switch (p_app_uart_evt->evt_type) {
-	case APP_UART_TX_EMPTY:
-		tx_next_byte();
-		break;
+	if (p_app_uart_evt->evt_type != APP_UART_TX_EMPTY)
+		return;
 
-	default:
-		break;
-	}
+	tx_next_byte();
 }
 #endif
 
