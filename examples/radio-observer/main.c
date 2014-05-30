@@ -72,23 +72,23 @@ void scan_interval_timeout(void *user_data)
 
 void radio_hdlr(uint8_t evt, void *data)
 {
-	struct radio_packet *packet = data;
+	const uint8_t *pdu = data;
 
 	if (evt != RADIO_EVT_RX_COMPLETED) {
 		ERROR("Unexpected radio evt: %u", evt);
 		return;
 	}
-
+#if 0
 	if (!packet->crcstatus) {
 		DBG("ch %u bad crc", channels[idx]);
 		goto recv;
 	}
-
+#endif
 	/* Link Layer specification section 2.3, Core 4.1, page 2505
 	 *
 	 * The length is the 6 LSB, and the minimum allowed payload is 6 bytes.
 	 */
-	if ((packet->pdu[1] & 0x3F) < 6) {
+	if ((pdu[1] & 0x3F) < 6) {
 		DBG("ch %u bad length", channels[idx]);
 		goto recv;
 	}
