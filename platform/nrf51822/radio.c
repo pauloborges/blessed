@@ -31,6 +31,7 @@
 #include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
+#include <blessed/timer.h>
 
 #include "radio.h"
 #include "nrf51822.h"
@@ -45,6 +46,7 @@
 static uint8_t buf[MAX_BUF_LEN] __attribute__ ((aligned));
 static volatile uint8_t status;
 static struct radio_driver *driver;
+static bool rxshort;
 
 static __inline int8_t ch2freq(uint8_t ch)
 {
@@ -71,8 +73,8 @@ static __inline int8_t ch2freq(uint8_t ch)
 	}
 }
 
-static __inline int16_t common_init(uint8_t ch, uint32_t aa,
-							uint32_t crcinit) {
+static __inline int16_t common_init(uint8_t ch, uint32_t aa, uint32_t crcinit)
+{
 	int8_t freq;
 
 	if (!(status & STATUS_INITIALIZED))
@@ -112,13 +114,20 @@ void RADIO_IRQHandler(void)
 		bool crc = (NRF_RADIO->CRCSTATUS ? true : false);
 		if (driver->rx)
 			driver->rx(buf, crc);
-	} else if (old_status & STATUS_TX)
+	} else if (old_status & STATUS_TX) {
+		if (rxshort) {
+			status |= STATUS_RX;
+			NRF_RADIO->PACKETPTR = (uint32_t) buf;
+			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
+		}
+
 		if (driver->tx)
 			driver->tx();
+	}
 }
 
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
-					const uint8_t *data, uint8_t len)
+				const uint8_t *data, uint8_t len, bool rx)
 {
 	/* FIXME: len is not used. */
 
@@ -131,13 +140,17 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 		return -EINVAL;
 
 	err_code = common_init(ch, aa, crcinit);
-
 	if (err_code < 0)
 		return err_code;
 
+	status |= STATUS_TX;
+	rxshort = rx;
+
+	if (rx)
+		NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RXEN_Msk;
+
 	NRF_RADIO->PACKETPTR = (uint32_t) data;
 	NRF_RADIO->TASKS_TXEN = 1UL;
-	status |= STATUS_TX;
 
 	return 0;
 }
