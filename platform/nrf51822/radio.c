@@ -257,10 +257,10 @@ int16_t radio_init(radio_cb hdlr)
 	 * Enable data whitening, set the maximum payload length and set the
 	 * access address size (3 + 1 octets).
 	 */
-	NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Enabled
-						<< RADIO_PCNF1_WHITEEN_Pos)
-				| (MAX_BUF_LEN << RADIO_PCNF1_MAXLEN_Pos)
-				| (3UL << RADIO_PCNF1_BALEN_Pos);
+	NRF_RADIO->PCNF1 =
+		(RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos) |
+		(MAX_BUF_LEN << RADIO_PCNF1_MAXLEN_Pos) |
+		(3UL << RADIO_PCNF1_BALEN_Pos);
 
 	/* nRF51 Series Reference Manual v2.1, section 16.1.4, page 74
 	 * nRF51 Series Reference Manual v2.1, section 16.2.14-15, pages 89-90
@@ -278,7 +278,8 @@ int16_t radio_init(radio_cb hdlr)
 	 * Configure the CRC length (3 octets), polynominal and set it to
 	 * ignore the access address when calculate the CRC.
 	 */
-	NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
+	NRF_RADIO->CRCCNF =
+		(RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
 		(RADIO_CRCCNF_SKIP_ADDR_Skip << RADIO_CRCCNF_SKIP_ADDR_Pos);
 	NRF_RADIO->CRCPOLY = 0x100065B;
 
