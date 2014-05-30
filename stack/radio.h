@@ -49,12 +49,6 @@ typedef enum radio_power {
 	RADIO_POWER_N30_DBM
 } radio_power_t;
 
-struct radio_packet {
-	uint8_t pdu[RADIO_MAX_PDU];
-	uint8_t len;
-	uint8_t crcstatus;
-};
-
 typedef void (*radio_cb) (uint8_t evt, void *data);
 
 int16_t radio_init(radio_cb hdlr);
