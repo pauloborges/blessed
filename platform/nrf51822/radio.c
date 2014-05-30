@@ -34,11 +34,7 @@
 #include "radio.h"
 #include "nrf51822.h"
 
-/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
- *
- * S0, LENGTH and S1 occupies 3 bytes in memory, not 2
- */
-#define MAX_BUF_LEN			(RADIO_MAX_PDU + 1)
+#define MAX_BUF_LEN			RADIO_MAX_PDU
 
 #define STATUS_INITIALIZED		1
 #define STATUS_RX			2
@@ -114,20 +110,7 @@ void RADIO_IRQHandler(void)
 	if (old_status & STATUS_RX) {
 		packet.len = buf[1] + 2;
 		packet.crcstatus = NRF_RADIO->CRCSTATUS;
-
-		/* Mount ADV PDU header */
-
-		/* Do the inverse process described in radio_send().
-		 *
-		 * FIXME: These operation values only works for advertise
-		 * channel PDUs.
-		 */
-		packet.pdu[0] = buf[0];
-		packet.pdu[1] = ((buf[2] & 0x3) << 6) | (buf[1] & 0x3F);
-
-		/* Copy PDU payload */
-		memcpy(packet.pdu + 2, buf + 3, buf[1]);
-
+		memcpy(packet.pdu, buf, packet.len);
 		handler(RADIO_EVT_RX_COMPLETED, &packet);
 	} else if (old_status & STATUS_TX)
 		handler(RADIO_EVT_TX_COMPLETED, NULL);
@@ -149,23 +132,7 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 	if (err_code < 0)
 		return err_code;
 
-	/* nRF51 Series Reference Manual v2.1, section 16.1.2, page 74
-	 * Link Layer specification section 2.3, Core 4.1, page 2504
-	 * Link Layer specification section 2.4, Core 4.1, page 2511
-	 *
-	 * Disassemble PDU headers into S0, LENGTH and S1 fields. The nRF51822
-	 * stores these fields in separate bytes, even if they are smaller than
-	 * one byte. So it is necessary to take the full header, which is 16
-	 * bits long, and break it into 3 pieces: S0, LENGTH and S1.
-	 *
-	 * FIXME: These operation values only works for advertise channel PDUs.
-	 */
-	buf[0] = data[0];
-	buf[1] = data[1] & 0x3F;
-	buf[2] = (data[1] >> 6) & 0x3;
-
-	/* Copy PDU payload */
-	memcpy(buf + 3, data + 2, len - 2);
+	memcpy(buf, data, len);
 
 	NRF_RADIO->TASKS_TXEN = 1UL;
 	status |= STATUS_TX;
@@ -294,9 +261,9 @@ int16_t radio_init(radio_cb hdlr)
 	 *
 	 * FIXME: These header sizes only works for advertise channel PDUs
 	 */
-	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos) |      /* 1 byte */
-				(6UL << RADIO_PCNF0_LFLEN_Pos) | /* 6 bits */
-				(2UL << RADIO_PCNF0_S1LEN_Pos);  /* 2 bits */
+	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos)	/* 1 byte */
+			| (8UL << RADIO_PCNF0_LFLEN_Pos)	/* 6 bits */
+			| (0UL << RADIO_PCNF0_S1LEN_Pos);	/* 2 bits */
 
 	/* nRF51 Series Reference Manual v2.1, section 16.1.8, page 76
 	 * nRF51 Series Reference Manual v2.1, section 16.1.10-11, pages 78-80
