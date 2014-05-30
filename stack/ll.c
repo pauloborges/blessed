@@ -83,6 +83,8 @@ static uint32_t t_adv_pdu_interval;
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 
+static bool rx = false;
+
 static __inline uint8_t first_adv_ch_idx(void)
 {
 	if (adv_ch_map & LL_ADV_CH_37)
@@ -110,7 +112,7 @@ static __inline int16_t inc_adv_ch_idx(void)
 static void t_adv_pdu_cb(void *user_data)
 {
 	radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
-					(uint8_t *) &pdu_adv, sizeof(pdu_adv));
+				(uint8_t *) &pdu_adv, sizeof(pdu_adv), rx);
 
 	if (!inc_adv_ch_idx())
 		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
@@ -147,6 +149,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
 		t_adv_pdu_interval = 10; /* <= 10ms Sec 4.4.2.6 pag 2534*/
+		rx = false;
 
 		break;
 	default:
