@@ -46,7 +46,7 @@
 #define STATUS_BUSY			(STATUS_RX | STATUS_TX)
 
 static radio_cb handler;
-static uint8_t buf[MAX_BUF_LEN];
+static uint8_t buf[MAX_BUF_LEN] __attribute__ ((aligned));
 static volatile uint8_t status;
 
 static __inline int8_t ch2freq(uint8_t ch)
