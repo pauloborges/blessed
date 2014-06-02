@@ -25,6 +25,7 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 
 #include <nrf51.h>
 #include <nrf51_bitfields.h>
@@ -41,9 +42,9 @@
 #define STATUS_TX			4
 #define STATUS_BUSY			(STATUS_RX | STATUS_TX)
 
-static radio_cb handler;
 static uint8_t buf[MAX_BUF_LEN] __attribute__ ((aligned));
 static volatile uint8_t status;
+static struct radio_driver *driver;
 
 static __inline int8_t ch2freq(uint8_t ch)
 {
@@ -103,17 +104,17 @@ void RADIO_IRQHandler(void)
 	old_status = status;
 	status = STATUS_INITIALIZED;
 
-	if (handler == NULL)
+	if (driver == NULL)
 		return;
 
 	if (old_status & STATUS_RX) {
-		/*
-		 * TODO: Missing NRF_RADIO->CRCSTATUS verification and
-		 * packet len = buf[1] + 2 (2 bytes header missing).
-		 */
-		handler(RADIO_EVT_RX_COMPLETED, buf);
+		/* TODO: packet len = buf[1] + 2 (2 bytes header missing). */
+		bool crc = (NRF_RADIO->CRCSTATUS ? true : false);
+		if (driver->rx)
+			driver->rx(buf, crc);
 	} else if (old_status & STATUS_TX)
-		handler(RADIO_EVT_TX_COMPLETED, NULL);
+		if (driver->tx)
+			driver->tx();
 }
 
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
@@ -212,7 +213,7 @@ int16_t radio_set_tx_power(radio_power_t power)
 	return -EINVAL;
 }
 
-int16_t radio_init(radio_cb hdlr)
+int16_t radio_init(struct radio_driver *drv)
 {
 	if (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL) {
 		NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
@@ -310,7 +311,7 @@ int16_t radio_init(radio_cb hdlr)
 	memset(buf, 0, sizeof(buf));
 
 	status = STATUS_INITIALIZED;
-	handler = hdlr;
+	driver = drv;
 
 	return 0;
 }

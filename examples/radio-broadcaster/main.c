@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
