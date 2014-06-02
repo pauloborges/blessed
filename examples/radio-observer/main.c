@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
@@ -70,20 +71,13 @@ void scan_interval_timeout(void *user_data)
 	timer_start(scan_window, SCAN_WINDOW, NULL);
 }
 
-void radio_hdlr(uint8_t evt, void *data)
+static void radio_rx(const uint8_t *pdu, bool crc)
 {
-	const uint8_t *pdu = data;
-
-	if (evt != RADIO_EVT_RX_COMPLETED) {
-		ERROR("Unexpected radio evt: %u", evt);
-		return;
-	}
-#if 0
-	if (!packet->crcstatus) {
+	if (!crc) {
 		DBG("ch %u bad crc", channels[idx]);
 		goto recv;
 	}
-#endif
+
 	/* Link Layer specification section 2.3, Core 4.1, page 2505
 	 *
 	 * The length is the 6 LSB, and the minimum allowed payload is 6 bytes.
@@ -93,17 +87,22 @@ void radio_hdlr(uint8_t evt, void *data)
 		goto recv;
 	}
 
-	DBG("ch %u (%s)", channels[idx], format_address(data + 2));
+	DBG("ch %u (%s)", channels[idx], format_address(pdu + 2));
 
 recv:
 	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 }
 
+static struct radio_driver radio_driver = {
+	.rx = radio_rx,
+	.tx = NULL,
+};
+
 int main(void)
 {
 	log_init();
 	timer_init();
-	radio_init(radio_hdlr);
+	radio_init(&radio_driver);
 
 	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
 	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);

@@ -49,9 +49,12 @@ typedef enum radio_power {
 	RADIO_POWER_N30_DBM
 } radio_power_t;
 
-typedef void (*radio_cb) (uint8_t evt, void *data);
+struct radio_driver {
+	void (*rx) (const uint8_t *pdu, bool crc);
+	void (*tx) (void); /* TODO: Add id */
+};
 
-int16_t radio_init(radio_cb hdlr);
+int16_t radio_init(struct radio_driver *driver);
 
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
