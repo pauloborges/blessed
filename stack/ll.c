@@ -76,7 +76,6 @@ static uint8_t adv_ch_idx;
 static uint8_t adv_ch_map;
 
 static int16_t t_adv_event;
-static uint32_t t_adv_event_interval;
 static int16_t t_adv_pdu;
 static uint32_t t_adv_pdu_interval;
 
@@ -146,8 +145,6 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 			return -EINVAL;
 
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-
-		t_adv_event_interval = interval;
 		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
 
 		break;
@@ -156,15 +153,15 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 		return -EINVAL;
 	}
 
-	err_code = timer_start(t_adv_event, t_adv_event_interval, NULL);
+	err_code = timer_start(t_adv_event, interval, NULL);
 	if (err_code < 0)
 		return err_code;
 
 	t_adv_event_cb(NULL);
 	current_state = LL_STATE_ADVERTISING;
 
-	DBG("PDU interval %ums, event interval %ums", t_adv_pdu_interval,
-							t_adv_event_interval);
+	DBG("PDU interval %ums, event interval %ums",
+				t_adv_pdu_interval, interval);
 
 	return 0;
 }
