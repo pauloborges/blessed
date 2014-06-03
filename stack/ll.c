@@ -52,7 +52,7 @@ typedef enum ll_states {
 } ll_states_t;
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
-typedef struct ll_pdu_adv {
+struct __attribute__ ((packed)) ll_pdu_adv {
 	uint8_t		pdu_type:4;	/* See ll_pdu_t */
 	uint8_t		_rfu_0:2;	/* Reserved for future use */
 	uint8_t		tx_add:1;	/* public (0) or random (1) */
@@ -62,7 +62,7 @@ typedef struct ll_pdu_adv {
 	uint8_t		_rfu_1:2;	/* Reserved for future use */
 
 	uint8_t		payload[LL_ADV_MTU_PAYLOAD];
-} __attribute__ ((packed)) ll_pdu_adv_t;
+};
 
 static const bdaddr_t *laddr;
 static ll_states_t current_state;
@@ -80,8 +80,8 @@ static uint32_t t_adv_event_interval;
 static int16_t t_adv_pdu;
 static uint32_t t_adv_pdu_interval;
 
-static ll_pdu_adv_t pdu_adv;
-static ll_pdu_adv_t pdu_scan_rsp;
+static struct ll_pdu_adv pdu_adv;
+static struct ll_pdu_adv pdu_scan_rsp;
 
 static __inline uint8_t first_adv_ch_idx(void)
 {
