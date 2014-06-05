@@ -96,7 +96,6 @@ static __inline int16_t common_init(uint8_t ch, uint32_t aa,
 
 void RADIO_IRQHandler(void)
 {
-	struct radio_packet packet;
 	uint8_t old_status;
 
 	NRF_RADIO->EVENTS_END = 0UL;
@@ -108,10 +107,11 @@ void RADIO_IRQHandler(void)
 		return;
 
 	if (old_status & STATUS_RX) {
-		packet.len = buf[1] + 2;
-		packet.crcstatus = NRF_RADIO->CRCSTATUS;
-		memcpy(packet.pdu, buf, packet.len);
-		handler(RADIO_EVT_RX_COMPLETED, &packet);
+		/*
+		 * TODO: Missing NRF_RADIO->CRCSTATUS verification and
+		 * packet len = buf[1] + 2 (2 bytes header missing).
+		 */
+		handler(RADIO_EVT_RX_COMPLETED, buf);
 	} else if (old_status & STATUS_TX)
 		handler(RADIO_EVT_TX_COMPLETED, NULL);
 }
@@ -119,6 +119,8 @@ void RADIO_IRQHandler(void)
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 					const uint8_t *data, uint8_t len)
 {
+	/* FIXME: len is not used. */
+
 	int16_t err_code;
 
 	if (len > RADIO_MAX_PDU)
@@ -132,8 +134,7 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 	if (err_code < 0)
 		return err_code;
 
-	memcpy(buf, data, len);
-
+	NRF_RADIO->PACKETPTR = (uint32_t) data;
 	NRF_RADIO->TASKS_TXEN = 1UL;
 	status |= STATUS_TX;
 
@@ -149,6 +150,7 @@ int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	if (err_code < 0)
 		return err_code;
 
+	NRF_RADIO->PACKETPTR = (uint32_t) buf;
 	NRF_RADIO->TASKS_RXEN = 1UL;
 	status |= STATUS_RX;
 
