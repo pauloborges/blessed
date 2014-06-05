@@ -55,7 +55,7 @@
  * AdvData: AD structure:
  * LEN: 15 bytes | LOCAL NAME: 0x09 | DATA: "blessed device"
  */
-static const uint8_t pdu[] = {	0x42, 0x16,	/* Header */
+static uint8_t pdu[] = {	0x42, 0x16,	/* Header */
 				0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
 				0x0F,	/* EIR Struct 1 length */
 				0x09,	/* Type: Complete local name */
