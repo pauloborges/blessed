@@ -145,7 +145,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 			return -EINVAL;
 
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-		t_adv_pdu_interval = 5; /* <= 10ms Sec 4.4.2.6 pag 2534*/
+		t_adv_pdu_interval = 10; /* <= 10ms Sec 4.4.2.6 pag 2534*/
 
 		break;
 	default:
