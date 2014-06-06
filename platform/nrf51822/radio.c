@@ -147,6 +147,10 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 	status |= STATUS_TX;
 	rxshort = rx;
 
+	NRF_RADIO->EVENTS_DISABLED = 0UL;
+	NRF_RADIO->TASKS_DISABLE = 1UL;
+	while (NRF_RADIO->EVENTS_DISABLED == 0UL);
+
 	if (rx)
 		NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RXEN_Msk;
 

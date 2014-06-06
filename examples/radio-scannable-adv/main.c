@@ -1,9 +1,8 @@
 /**
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2013 Paulo B. de Oliveira Filho <pauloborgesfilho@gmail.com>
- *  Copyright (c) 2013 Claudio Takahasi <claudio.takahasi@gmail.com>
- *  Copyright (c) 2013 João Paulo Rechi Vita <jprvita@gmail.com>
+ *  Copyright (c) 2014 Paulo B. de Oliveira Filho <pauloborgesfilho@gmail.com>
+ *  Copyright (c) 2014 Claudio Takahasi <claudio.takahasi@gmail.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +22,6 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
-
-#define ENABLE_LOG
 
 #include <string.h>
 #include <stdint.h>
@@ -100,37 +97,33 @@ static void adv_event_timeout(void *user_data)
 		idx++;
 
 	err = radio_send(channels[idx], ADV_CHANNEL_AA,
-				ADV_CHANNEL_CRC, pdu, sizeof(pdu), true);
+				ADV_CHANNEL_CRC, pdu, sizeof(pdu), false);
 	if (err < 0)
-		ERROR("radio_send_then_recv() returned %d\n", -err);
+		ERROR("radio_send() returned %d\n", -err);
 }
 
-static inline void recv(const uint8_t *pkt)
+static void radio_rx(const uint8_t *ipdu, bool crc)
 {
-	if (pkt[0] != 0x83)
+	if (ipdu[0] != 0x83)
 		return;
 
-	radio_reply(pdu2, sizeof(pdu2));
+	// radio_reply(pdu2, sizeof(pdu2));
+	// radio_send(channels[idx], ADV_CHANNEL_AA,
+	// 			ADV_CHANNEL_CRC, pdu2, sizeof(pdu2), false);
 }
 
-void radio_handler(uint8_t evt, void *data)
-{
-	switch (evt) {
-	case RADIO_EVT_TX_COMPLETED:
-		break;
-	case RADIO_EVT_TX_COMPLETED_RX_NEXT:
-		break;
-	case RADIO_EVT_RX_COMPLETED:
-		recv(data);
-		break;
-	}
-}
+static struct radio_driver radio_driver = {
+	.rx = radio_rx,
+	.tx = NULL,
+};
 
 int main(void)
 {
+	pdu2[0] = 0x44;
+
 	log_init();
 	timer_init();
-	radio_init(radio_handler);
+	radio_init(&radio_driver);
 
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
 
