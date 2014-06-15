@@ -74,11 +74,11 @@ $(BUILD_PATH):
 
 install: all
 	@echo "INSTALL\t$(PROJECT_TARGET)"
-	@$(PROGRAMMER) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
+	@$(PROGRAMMER) --jlinkexe $(JLINK_EXE) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 erase:
 	@echo " ERASE"
-	@$(PROGRAMMER) erase
+	@$(PROGRAMMER) --jlinkexe $(JLINK_EXE) erase
 
 clean:
 	@echo " CLEAN"
