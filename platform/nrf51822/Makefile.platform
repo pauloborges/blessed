@@ -12,12 +12,13 @@ BOARD			?= BOARD_PCA10001
 HEAP_SIZE		?= 0
 STACK_SIZE		?= 1024
 
-CC			= arm-none-eabi-gcc
-LD			= arm-none-eabi-gcc
-AR			= arm-none-eabi-ar
-SIZE			= arm-none-eabi-size
-OBJCOPY			= arm-none-eabi-objcopy
-OBJDUMP			= arm-none-eabi-objdump
+CROSS_COMPILE		?= arm-none-eabi-
+CC			= $(CROSS_COMPILE)gcc
+LD			= $(CROSS_COMPILE)gcc
+AR			= $(CROSS_COMPILE)ar
+SIZE			= $(CROSS_COMPILE)size
+OBJCOPY			= $(CROSS_COMPILE)objcopy
+OBJDUMP			= $(CROSS_COMPILE)objdump
 PROGRAMMER		= nrftool
 
 SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/nrf51822/Include
