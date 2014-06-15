@@ -1,6 +1,6 @@
 # Common Makefile to build applications
 
--include Makefile.config
+-include ../../Makefile.config
 
 ifeq ($(PLATFORM),)
         $(error PLATFORM is not defined)
