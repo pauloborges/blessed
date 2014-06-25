@@ -76,14 +76,69 @@ static uint8_t adv_chs[] = { 37, 38, 39 };
 static uint8_t adv_ch_idx;
 static uint8_t adv_ch_map;
 
-static int16_t t_adv_event;
-static int16_t t_adv_pdu;
 static uint32_t t_adv_pdu_interval;
+static uint16_t t_scan_window;
 
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 
 static bool rx = false;
+
+/** Timers used by the LL
+ * Two timers are shared for the various states : one for triggering 
+ * events at periodic intervals (advertising start / scanning start)
+ * 
+ * The second is used as single shot : change advertising channel or stop
+ * scanning at the end of the window
+ */
+static int16_t t_ll_interval;
+static int16_t t_ll_single_shot;
+
+/** Callback function to report advertisers (SCANNING state) */
+static adv_report_cb_t ll_adv_report_cb = NULL;
+
+/* Set up the radio to receive a new packet */
+static __inline void scan_radio_recv(void)
+{
+	radio_recv(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
+}
+
+/**@brief Function called by the radio driver (PHY layer) on packet RX
+ * Dispatch the event according to the LL state
+ */
+static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
+{
+	switch(current_state) {
+		case LL_STATE_SCANNING:
+			if(!ll_adv_report_cb)
+			{
+				ERROR("No adv. report callback defined");
+				return;
+			}
+			
+			//Extract information from PDU and call ll_adv_report_cb
+			struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv *)(pdu);
+			ll_adv_report_cb(rcvd_pdu->pdu_type, rcvd_pdu->tx_add, rcvd_pdu->payload, rcvd_pdu->length-BDADDR_LEN, rcvd_pdu->payload+BDADDR_LEN);
+			
+			scan_radio_recv(); //Receive new packets while the radio is not explicitly stopped 
+			break;
+		
+		case LL_INITIATING_SCANNING:
+		case LL_CONNECTION_SCANNING:
+		case LL_STATE_ADVERTISING:
+			/* Not implemented */
+		case LL_STATE_STANDBY:
+		default:
+			/* Nothing to do */
+			return;
+	}
+}
+
+/** Radio driver used by the Link Layer */
+static struct radio_driver ll_radio_driver = {
+	.rx = ll_on_radio_rx,
+	.tx = NULL,
+};
 
 static __inline uint8_t first_adv_ch_idx(void)
 {
@@ -109,19 +164,59 @@ static __inline int16_t inc_adv_ch_idx(void)
 	return 0;
 }
 
-static void t_adv_pdu_cb(void *user_data)
+/** Callback function for the "single shot" LL timer
+ */
+static void t_ll_single_shot_cb(void *user_data)
 {
-	radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
+	switch(current_state) {
+		case LL_STATE_ADVERTISING:
+			radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 				(uint8_t *) &pdu_adv, sizeof(pdu_adv), rx);
 
-	if (!inc_adv_ch_idx())
-		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+			if (!inc_adv_ch_idx())
+			timer_start(t_ll_single_shot, t_adv_pdu_interval, NULL);
+			break;
+			
+		case LL_STATE_SCANNING: //Called at the end of the scan window
+			radio_stop();
+			break;
+
+		case LL_INITIATING_SCANNING:
+		case LL_CONNECTION_SCANNING:
+			/* Not implemented */
+		case LL_STATE_STANDBY:
+		default:
+			/* Nothing to do */
+			return;
+	}
 }
 
-static void t_adv_event_cb(void *user_data)
-{
-	adv_ch_idx = first_adv_ch_idx();
-	t_adv_pdu_cb(NULL);
+/** Callback function for the "interval" LL timer
+ */
+static void t_ll_interval_cb(void *user_data)
+{	
+	switch(current_state) {
+		case LL_STATE_ADVERTISING:
+			adv_ch_idx = first_adv_ch_idx();
+			t_ll_single_shot_cb(NULL);
+			break;
+			
+		case LL_STATE_SCANNING:
+			if(!inc_adv_ch_idx())
+				adv_ch_idx = first_adv_ch_idx();
+			
+			scan_radio_recv();
+			timer_start(t_ll_single_shot, t_scan_window, NULL);
+			break;
+
+		case LL_INITIATING_SCANNING:
+		case LL_CONNECTION_SCANNING:
+			/* Not implemented */
+		case LL_STATE_STANDBY:
+		default:
+			/* Nothing to do */
+			return;
+	}
 }
 
 int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
@@ -157,12 +252,12 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 		return -EINVAL;
 	}
 
-	err_code = timer_start(t_adv_event, interval, NULL);
+	err_code = timer_start(t_ll_interval, interval, NULL);
 	if (err_code < 0)
 		return err_code;
 
-	t_adv_event_cb(NULL);
 	current_state = LL_STATE_ADVERTISING;
+	t_ll_interval_cb(NULL);
 
 	DBG("PDU interval %ums, event interval %ums",
 				t_adv_pdu_interval, interval);
@@ -177,11 +272,11 @@ int16_t ll_advertise_stop()
 	if (current_state != LL_STATE_ADVERTISING)
 		return -ENOREADY;
 
-	err_code = timer_stop(t_adv_pdu);
+	err_code = timer_stop(t_ll_interval);
 	if (err_code < 0)
 		return err_code;
 
-	err_code = timer_stop(t_adv_event);
+	err_code = timer_stop(t_ll_single_shot);
 	if (err_code < 0)
 		return err_code;
 
@@ -248,23 +343,96 @@ int16_t ll_init(const bdaddr_t *addr)
 	err_code = timer_init();
 	if (err_code < 0)
 		return err_code;
-
-	err_code = radio_init(NULL);
+		
+	err_code = radio_init(&ll_radio_driver);
 	if (err_code < 0)
 		return err_code;
 
-	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
-	if (t_adv_event < 0)
-		return t_adv_event;
+	t_ll_interval = timer_create(TIMER_REPEATED, t_ll_interval_cb);
+	if (t_ll_interval < 0)
+		return t_ll_interval;
 
-	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
-	if (t_adv_pdu < 0)
-		return t_adv_pdu;
+	t_ll_single_shot = timer_create(TIMER_SINGLESHOT, t_ll_single_shot_cb);
+	if (t_ll_single_shot < 0)
+		return t_ll_single_shot;
 
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
 
 	init_adv_pdus();
+	
+	return 0;
+}
+
+/**@brief Set scan parameters and start scanning 
+ * 
+ * @note The HCI spec specifies interval in units of 0.625 ms ; here we use ms directly
+ * 
+ * @param [in] scan_type: should be LL_SCAN_ACTIVE or LL_SCAN_PASSIVE (only the latter implemented at this time)
+ * @param [in] interval: the scan Interval in ms
+ * @param [in] window: the scan Window in ms
+ * @param [in] adv_report_cb: the function to call for advertising report events
+ * 
+ * @return -EINVAL if window > interval or interval > 10.24 s 
+ * @return -EINVAL if scan_type != LL_SCAN_PASSIVE
+ */
+int16_t ll_scan_start(uint8_t scan_type, uint16_t interval, uint16_t window, adv_report_cb_t adv_report_cb)
+{
+	int16_t err_code; 
+	
+	if(window > interval || interval > LL_SCAN_INTERVAL_MAX)
+		return -EINVAL;
+		
+	switch(scan_type) {
+		case LL_SCAN_PASSIVE:
+			//Setup callback function
+			ll_adv_report_cb = adv_report_cb;
+			break;
+			
+		case LL_SCAN_ACTIVE:
+		/* Not implemented */
+		default:
+			return -EINVAL;
+	}
+	
+	//Setup timer and save window length
+	t_scan_window = window;
+	err_code = timer_start(t_ll_interval, interval, NULL);
+	if (err_code < 0)
+		return err_code;
+		
+	current_state = LL_STATE_SCANNING;
+	t_ll_interval_cb(NULL);
+
+	DBG("interval %ums, window %ums",
+				interval, window);
+
+	return 0;
+}
+
+/**@brief Stop scanning
+ */
+int16_t ll_scan_stop(void)
+{
+	int16_t err_code;
+
+	if (current_state != LL_STATE_SCANNING)
+		return -ENOREADY;
+
+	err_code = timer_stop(t_ll_interval);
+	if (err_code < 0)
+		return err_code;
+
+	err_code = timer_stop(t_ll_single_shot);
+	if (err_code < 0)
+		return err_code;
+		
+	//Call the single shot cb to stop the radio
+	t_ll_single_shot_cb(NULL);
+
+	current_state = LL_STATE_STANDBY;
+	
+	DBG("");
 
 	return 0;
 }

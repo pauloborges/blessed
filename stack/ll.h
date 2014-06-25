@@ -43,12 +43,20 @@
 #define LL_ADV_INTERVAL_MIN_NONCONN	100	/* 100 ms */
 #define LL_ADV_INTERVAL_MAX		10240	/* 10.24 s */
 
+/* Link Layer specification Section 4.4.3, Core 4.1 page 2535 */
+#define LL_SCAN_WINDOW_MAX		10240	/* 10.24 s */
+#define LL_SCAN_INTERVAL_MAX	10240	/* 10.24 s */
+
 /* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1248 */
 #define LL_ADV_CH_37			(1 << 0)
 #define LL_ADV_CH_38			(1 << 1)
 #define LL_ADV_CH_39			(1 << 2)
 #define LL_ADV_CH_ALL			(LL_ADV_CH_37 | LL_ADV_CH_38 |	\
  							LL_ADV_CH_39)
+ 							
+/* HCI Funcional Specification Section 7.8.10, Core 4.1 page 1255 */
+#define LL_SCAN_PASSIVE			(0x00)
+#define LL_SCAN_ACTIVE			(0x01)
 
 /* Link Layer specification Section 2.3, Core 4.1 page 2505 */
 typedef enum ll_pdu {
@@ -61,9 +69,17 @@ typedef enum ll_pdu {
 	LL_PDU_ADV_SCAN_IND
 } ll_pdu_t;
 
+/* Callback function for LE advertising reports (scanning mode) */
+typedef void (*adv_report_cb_t)(ll_pdu_t type, uint8_t addr_type, uint8_t *addr, uint8_t len, uint8_t *data); //See HCI Funcional Specification Section 7.7.65.2, Core 4.1 page 1220
+
 int16_t ll_init(const bdaddr_t *addr);
 
+/* Advertising */
 int16_t ll_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t ll_set_scan_response_data(const uint8_t *data, uint8_t len);
 int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap);
 int16_t ll_advertise_stop(void);
+
+/* Scanning */
+int16_t ll_scan_start(uint8_t scan_type, uint16_t interval, uint16_t window, adv_report_cb_t adv_report_cb);
+int16_t ll_scan_stop(void); 
