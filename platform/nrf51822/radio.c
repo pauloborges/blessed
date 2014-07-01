@@ -219,6 +219,21 @@ int16_t radio_init(radio_cb hdlr)
 		while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL);
 	}
 
+	/* nRF51 Series Reference Manual v2.1, section 6.1.1, page 18
+	 * PCN-083 rev.1.1
+	 *
+	 * Fine tune BLE deviation parameters.
+	 */
+	if ((NRF_FICR->OVERRIDEEN & FICR_OVERRIDEEN_BLE_1MBIT_Msk)
+					== (FICR_OVERRIDEEN_BLE_1MBIT_Override
+					<< FICR_OVERRIDEEN_BLE_1MBIT_Pos)) {
+		NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+		NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+		NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+		NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+		NRF_RADIO->OVERRIDE4 = NRF_FICR->BLE_1MBIT[4] | 0x80000000;
+	}
+
 	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
 
 	/* nRF51 Series Reference Manual v2.1, section 16.2.9, page 88
