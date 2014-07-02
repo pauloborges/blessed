@@ -98,9 +98,7 @@ int main(void)
 	DBG("Time between PDUs: %u ms", ADV_INTERVAL);
 	DBG("T_advEvent:        %u ms", ADV_EVENT);
 
-	timer_start(adv_interval, ADV_INTERVAL, NULL);
 	timer_start(adv_event, ADV_EVENT, NULL);
-
 	adv_event_timeout(NULL);
 
 	while (1);
