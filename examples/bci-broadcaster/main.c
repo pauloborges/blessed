@@ -29,7 +29,7 @@
 
 #include <blessed/bluetooth.h>
 
-#define BLE_ADDRESS_ADDR		{ 0xEF, 0xBE, 0xAD, 0xDE, 0x00, 0x00 }
+#define BLE_ADDRESS_ADDR		{ 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF }
 #define BLE_ADDRESS_TYPE		BDADDR_TYPE_RANDOM
 #define BLE_ADDRESS			{ BLE_ADDRESS_ADDR, BLE_ADDRESS_TYPE }
 
