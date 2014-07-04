@@ -53,7 +53,7 @@ typedef enum bci_adv {
 
 struct bci_adv_params {
 	bci_adv_t type;
-	uint16_t interval;
+	uint32_t interval;
 	uint8_t chmap;
 };
 
