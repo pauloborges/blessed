@@ -77,7 +77,7 @@ static uint8_t adv_ch_idx;
 static uint8_t adv_ch_map;
 
 static uint32_t t_adv_pdu_interval;
-static uint16_t t_scan_window;
+static uint32_t t_scan_window;
 
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
@@ -230,7 +230,7 @@ static void t_ll_interval_cb(void *user_data)
 	}
 }
 
-int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
+int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 {
 	int16_t err_code;
 
@@ -378,18 +378,18 @@ int16_t ll_init(const bdaddr_t *addr)
 /**@brief Set scan parameters and start scanning
  *
  * @note The HCI spec specifies interval in units of 0.625 ms.
- * 	Here we use ms directly.
+ * 	Here we use us directly.
  *
  * @param [in] scan_type: should be LL_SCAN_ACTIVE or LL_SCAN_PASSIVE
  * 		(only the latter implemented at this time)
- * @param [in] interval: the scan Interval in ms
- * @param [in] window: the scan Window in ms
+ * @param [in] interval: the scan Interval in us
+ * @param [in] window: the scan Window in us
  * @param [in] adv_report_cb: the function to call for advertising report events
  *
  * @return -EINVAL if window > interval or interval > 10.24 s
  * @return -EINVAL if scan_type != LL_SCAN_PASSIVE
  */
-int16_t ll_scan_start(uint8_t scan_type, uint16_t interval, uint16_t window,
+int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 						adv_report_cb_t adv_report_cb)
 {
 	int16_t err_code;

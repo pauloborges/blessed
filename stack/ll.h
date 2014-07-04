@@ -80,10 +80,10 @@ int16_t ll_init(const bdaddr_t *addr);
 /* Advertising */
 int16_t ll_set_advertising_data(const uint8_t *data, uint8_t len);
 int16_t ll_set_scan_response_data(const uint8_t *data, uint8_t len);
-int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap);
+int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap);
 int16_t ll_advertise_stop(void);
 
 /* Scanning */
-int16_t ll_scan_start(uint8_t scan_type, uint16_t interval, uint16_t window,
+int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 						adv_report_cb_t adv_report_cb);
 int16_t ll_scan_stop(void);
