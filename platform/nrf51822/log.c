@@ -39,7 +39,9 @@
 
 #include "nrf51822.h"
 
-#define BUFFER_LEN			128
+#ifndef CONFIG_LOG_BUFFER_LEN
+#define CONFIG_LOG_BUFFER_LEN		128
+#endif
 
 #define UNINITIALIZED			0
 #define READY				1
@@ -48,7 +50,7 @@
 #if CONFIG_LOG_ENABLE
 static volatile uint16_t pos;
 static volatile uint16_t len;
-static volatile uint8_t buffer[BUFFER_LEN] __attribute__ ((aligned));
+static volatile uint8_t buffer[CONFIG_LOG_BUFFER_LEN] __attribute__ ((aligned));
 static volatile uint8_t state = UNINITIALIZED;
 
 static __inline void tx_next_byte(void)
@@ -81,7 +83,7 @@ int16_t log_print(const char *format, ...)
 	while (state == BUSY);
 
 	va_start(args, format);
-	len = vsnprintf((char *) buffer, BUFFER_LEN, format, args);
+	len = vsnprintf((char *) buffer, CONFIG_LOG_BUFFER_LEN, format, args);
 	va_end(args);
 
 	pos = 0;
