@@ -76,14 +76,22 @@ static uint8_t adv_chs[] = { 37, 38, 39 };
 static uint8_t adv_ch_idx;
 static uint8_t adv_ch_map;
 
-static int16_t t_adv_event;
-static int16_t t_adv_pdu;
 static uint32_t t_adv_pdu_interval;
 
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 
 static bool rx = false;
+
+/** Timers used by the LL
+ * Two timers are shared for the various states : one for triggering
+ * events at periodic intervals (advertising start / scanning start)
+ *
+ * The second is used as single shot : change advertising channel or stop
+ * scanning at the end of the window
+ */
+static int16_t t_ll_interval;
+static int16_t t_ll_single_shot;
 
 static __inline uint8_t first_adv_ch_idx(void)
 {
@@ -109,19 +117,23 @@ static __inline int16_t inc_adv_ch_idx(void)
 	return 0;
 }
 
-static void t_adv_pdu_cb(void *user_data)
+/** Callback function for the "single shot" LL timer
+ */
+static void t_ll_single_shot_cb(void *user_data)
 {
 	radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV,
 				(uint8_t *) &pdu_adv, sizeof(pdu_adv), rx);
 
 	if (!inc_adv_ch_idx())
-		timer_start(t_adv_pdu, t_adv_pdu_interval, NULL);
+		timer_start(t_ll_single_shot, t_adv_pdu_interval, NULL);
 }
 
-static void t_adv_event_cb(void *user_data)
+/** Callback function for the "interval" LL timer
+ */
+static void t_ll_interval_cb(void *user_data)
 {
 	adv_ch_idx = first_adv_ch_idx();
-	t_adv_pdu_cb(NULL);
+	t_ll_single_shot_cb(NULL);
 }
 
 int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
@@ -157,12 +169,12 @@ int16_t ll_advertise_start(ll_pdu_t type, uint16_t interval, uint8_t chmap)
 		return -EINVAL;
 	}
 
-	err_code = timer_start(t_adv_event, interval, NULL);
+	err_code = timer_start(t_ll_interval, interval, NULL);
 	if (err_code < 0)
 		return err_code;
 
-	t_adv_event_cb(NULL);
 	current_state = LL_STATE_ADVERTISING;
+	t_ll_interval_cb(NULL);
 
 	DBG("PDU interval %ums, event interval %ums",
 				t_adv_pdu_interval, interval);
@@ -177,11 +189,11 @@ int16_t ll_advertise_stop()
 	if (current_state != LL_STATE_ADVERTISING)
 		return -ENOREADY;
 
-	err_code = timer_stop(t_adv_pdu);
+	err_code = timer_stop(t_ll_interval);
 	if (err_code < 0)
 		return err_code;
 
-	err_code = timer_stop(t_adv_event);
+	err_code = timer_stop(t_ll_single_shot);
 	if (err_code < 0)
 		return err_code;
 
@@ -253,13 +265,13 @@ int16_t ll_init(const bdaddr_t *addr)
 	if (err_code < 0)
 		return err_code;
 
-	t_adv_event = timer_create(TIMER_REPEATED, t_adv_event_cb);
-	if (t_adv_event < 0)
-		return t_adv_event;
+	t_ll_interval = timer_create(TIMER_REPEATED, t_ll_interval_cb);
+	if (t_ll_interval < 0)
+		return t_ll_interval;
 
-	t_adv_pdu = timer_create(TIMER_SINGLESHOT, t_adv_pdu_cb);
-	if (t_adv_pdu < 0)
-		return t_adv_pdu;
+	t_ll_single_shot = timer_create(TIMER_SINGLESHOT, t_ll_single_shot_cb);
+	if (t_ll_single_shot < 0)
+		return t_ll_single_shot;
 
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
