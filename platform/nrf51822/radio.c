@@ -258,6 +258,7 @@ int16_t radio_init(struct radio_driver *drv)
 		NRF_RADIO->OVERRIDE4 = NRF_FICR->BLE_1MBIT[4] | 0x80000000;
 	}
 
+	/* nRF51 Series Reference Manual v2.1, section 16.2.7, page 86 */
 	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
 
 	/* Link Layer specification section 4.1, Core 4.1, page 2524
