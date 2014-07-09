@@ -260,6 +260,13 @@ int16_t radio_init(struct radio_driver *drv)
 
 	NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos;
 
+	/* Link Layer specification section 4.1, Core 4.1, page 2524
+	 * nRF51 Series Reference Manual v2.1, section 16.2.7, page 92
+	 *
+	 * Set the inter frame space (T_IFS) to 150 us.
+	 */
+	NRF_RADIO->TIFS = 150;
+
 	/* nRF51 Series Reference Manual v2.1, section 16.2.9, page 88
 	 *
 	 * Enable data whitening, set the maximum payload length and set the
