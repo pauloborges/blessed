@@ -48,8 +48,8 @@ typedef enum ll_states {
 	LL_STATE_STANDBY,
 	LL_STATE_ADVERTISING,
 	LL_STATE_SCANNING,
-	LL_INITIATING_SCANNING,
-	LL_CONNECTION_SCANNING,
+	LL_STATE_INITIATING,
+	LL_STATE_CONNECTION,
 } ll_states_t;
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
