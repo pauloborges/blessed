@@ -19,7 +19,7 @@ AR			= $(CROSS_COMPILE)ar
 SIZE			= $(CROSS_COMPILE)size
 OBJCOPY			= $(CROSS_COMPILE)objcopy
 OBJDUMP			= $(CROSS_COMPILE)objdump
-PROGRAMMER		= nrftool
+PROGRAMMER		?= nrftool
 JLINK_EXE		?= JLinkExe
 
 SDK_INCLUDE_PATH	= $(NRF51_SDK_PATH)/nrf51822/Include
