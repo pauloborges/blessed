@@ -107,9 +107,8 @@ int main(void)
 	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
 	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);
 
-	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
-	timer_start(scan_window, SCAN_WINDOW, NULL);
 	timer_start(scan_interval, SCAN_INTERVAL, NULL);
+	scan_interval_timeout(NULL);
 
 	while (1);
 
