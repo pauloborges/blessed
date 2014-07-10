@@ -55,8 +55,8 @@
  							LL_ADV_CH_39)
 
 /* HCI Funcional Specification Section 7.8.10, Core 4.1 page 1255 */
-#define LL_SCAN_PASSIVE			(0x00)
-#define LL_SCAN_ACTIVE			(0x01)
+#define LL_SCAN_PASSIVE			0x00
+#define LL_SCAN_ACTIVE			0x01
 
 /* Link Layer specification Section 2.3, Core 4.1 page 2505 */
 typedef enum ll_pdu {
@@ -71,11 +71,9 @@ typedef enum ll_pdu {
 
 /* Callback function for LE advertising reports (scanning mode)
  * See HCI Funcional Specification Section 7.7.65.2, Core 4.1 page 1220 */
-typedef void (*adv_report_cb_t)(ll_pdu_t type,
-				uint8_t addr_type,
-				const uint8_t *addr,
-				uint8_t len,
-				const uint8_t *data);
+typedef void (*adv_report_cb_t)(ll_pdu_t type, uint8_t addr_type,
+					const uint8_t *addr, uint8_t len,
+					const uint8_t *data);
 
 int16_t ll_init(const bdaddr_t *addr);
 
