@@ -254,7 +254,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 			return -EINVAL;
 
 		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
-		t_adv_pdu_interval = 10; /* <= 10ms Sec 4.4.2.6 pag 2534 */
+		t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 		rx = false;
 
 		break;
@@ -270,7 +270,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	current_state = LL_STATE_ADVERTISING;
 	t_ll_interval_cb(NULL);
 
-	DBG("PDU interval %ums, event interval %ums", t_adv_pdu_interval,
+	DBG("PDU interval %uus, event interval %uus", t_adv_pdu_interval,
 								interval);
 
 	return 0;
@@ -418,7 +418,7 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 	current_state = LL_STATE_SCANNING;
 	t_ll_interval_cb(NULL);
 
-	DBG("interval %ums, window %ums", interval, window);
+	DBG("interval %uus, window %uus", interval, window);
 
 	return 0;
 }

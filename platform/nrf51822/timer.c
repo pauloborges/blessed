@@ -167,7 +167,7 @@ create:
 	return id;
 }
 
-int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
+int16_t timer_start(int16_t id, uint32_t us, void *user_data)
 {
 	uint32_t ticks;
 
@@ -180,8 +180,8 @@ int16_t timer_start(int16_t id, uint32_t ms, void *user_data)
 	if (timers[id].active)
 		return -EALREADY;
 
-	ticks = ROUNDED_DIV((uint64_t)ms * HFCLK,
-		1000UL * ROUNDED_DIV(2 << TIMER_PRESCALER, 2));
+	ticks = ROUNDED_DIV((uint64_t)us * HFCLK, TIMER_SECONDS(1)
+					* ROUNDED_DIV(2 << TIMER_PRESCALER, 2));
 
 	timers[id].active = 1;
 	timers[id].ticks = ticks;

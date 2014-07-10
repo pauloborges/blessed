@@ -40,8 +40,8 @@
 /* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
 #define ADV_CHANNEL_CRC			0x555555
 
-#define ADV_EVENT			200
-#define ADV_INTERVAL			10
+#define ADV_EVENT			TIMER_MILLIS(200)
+#define ADV_INTERVAL			TIMER_MILLIS(10)
 
 /* Link Layer specification section 2.3, Core 4.1, page 2504
  * Link Layer specification section 2.3.1.4, Core 4.1, page 2507

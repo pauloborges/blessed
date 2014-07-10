@@ -30,9 +30,9 @@
 #include <blessed/timer.h>
 #include <blessed/log.h>
 
-#define TIMER1_MS			1000
-#define TIMER2_MS			250
-#define TIMER3_MS			10000
+#define TIMER1				TIMER_MILLIS(1000)
+#define TIMER2				TIMER_MILLIS(250)
+#define TIMER3				TIMER_MILLIS(10000)
 
 uint16_t counter = 0;
 uint16_t timer_data = 0;
@@ -61,7 +61,7 @@ void timeout2(void *user_data)
 
 void timeout3(void *user_data)
 {
-	DBG("singleshot timer after %d seconds", TIMER3_MS / 1000);
+	DBG("singleshot timer after %d seconds", TIMER3 / 1000);
 }
 
 int main(void)
@@ -73,9 +73,9 @@ int main(void)
 	timer2 = timer_create(TIMER_REPEATED, timeout2);
 	timer3 = timer_create(TIMER_SINGLESHOT, timeout3);
 
-	timer_start(timer1, TIMER1_MS, NULL);
-	timer_start(timer2, TIMER2_MS, &timer_data);
-	timer_start(timer3, TIMER3_MS, NULL);
+	timer_start(timer1, TIMER1, NULL);
+	timer_start(timer2, TIMER2, &timer_data);
+	timer_start(timer3, TIMER3, NULL);
 
 	while (1);
 

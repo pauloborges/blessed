@@ -37,8 +37,8 @@
 #define ADV_CHANNEL_AA			0x8E89BED6
 #define ADV_CHANNEL_CRC			0x555555
 
-#define SCAN_WINDOW			1000
-#define SCAN_INTERVAL			2000
+#define SCAN_WINDOW			TIMER_MILLIS(1000)
+#define SCAN_INTERVAL			TIMER_MILLIS(2000)
 
 static uint8_t channels[] = { 37, 38, 39 };
 static uint8_t idx = 0;

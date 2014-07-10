@@ -31,9 +31,9 @@
 #define BCI_ADV_MTU_DATA		31
 
 /* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1247 */
-#define BCI_ADV_INTERVAL_MIN_CONN	20
-#define BCI_ADV_INTERVAL_MIN_NONCONN	100
-#define BCI_ADV_INTERVAL_MAX		10240	/* 10.24 s */
+#define BCI_ADV_INTERVAL_MIN_CONN	20000
+#define BCI_ADV_INTERVAL_MIN_NONCONN	100000
+#define BCI_ADV_INTERVAL_MAX		10240000	/* 10.24 s */
 
 /* HCI Funcional Specification Section 7.8.5, Core 4.1 page 1248 */
 #define BCI_ADV_CH_37			(1 << 0)
