@@ -35,7 +35,7 @@
 
 #include "ll.h"
 
-#define SCAN_WINDOW				200
+#define SCAN_WINDOW			200
 #define SCAN_INTERVAL			500
 
 static const bdaddr_t addr = { { 0x14, 0x20, 0xCC, 0xDD, 0xEE, 0xFF },
