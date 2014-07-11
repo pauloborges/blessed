@@ -65,6 +65,12 @@ struct __attribute__ ((packed)) ll_pdu_adv {
 	uint8_t		payload[LL_ADV_MTU_PAYLOAD];
 };
 
+/* Link Layer specification Section 2.3, Core 4.1 pages 2508 */
+struct __attribute__ ((packed)) ll_pdu_scan_req {
+	uint8_t scana[6];
+	uint8_t adva[6];
+};
+
 static const bdaddr_t *laddr;
 static ll_states_t current_state;
 
@@ -74,6 +80,7 @@ static ll_states_t current_state;
 
 static uint8_t adv_chs[] = { 37, 38, 39 };
 static uint8_t adv_ch_idx;
+static uint8_t prev_adv_ch_idx;
 static uint8_t adv_ch_map;
 
 static uint32_t t_adv_pdu_interval;
@@ -103,12 +110,34 @@ static __inline void scan_radio_recv(void)
 	radio_recv(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
 }
 
+static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
+{
+	struct ll_pdu_scan_req *scn;
+
+	/* SCAN_REQ payload: ScanA(6 octets)|AdvA(6 octects) */
+	if (pdu->length != 12)
+		return;
+
+	if (pdu->rx_add != laddr->type)
+		return;
+
+	scn = (struct ll_pdu_scan_req *) pdu->payload;
+	if (memcmp(scn->adva, laddr->addr, 6))
+		return;
+
+	/* Send SCAN_RSP */
+	radio_send(adv_chs[prev_adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
+					LL_CRCINIT_ADV,
+					(const uint8_t *) &pdu_scan_rsp,
+					pdu_scan_rsp.length, false);
+}
+
 /**@brief Function called by the radio driver (PHY layer) on packet RX
  * Dispatch the event according to the LL state
  */
 static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 {
-	struct ll_pdu_adv *rcvd_pdu;
+	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
 
 	switch(current_state) {
 		case LL_STATE_SCANNING:
@@ -120,7 +149,6 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 			/* Extract information from PDU and call
 			 * ll_adv_report_cb
 			 */
-			rcvd_pdu = (struct ll_pdu_adv*) pdu;
 
 			ll_adv_report_cb(rcvd_pdu->type, rcvd_pdu->tx_add,
 						rcvd_pdu->payload,
@@ -133,10 +161,20 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 			scan_radio_recv();
 			break;
 
+		case LL_STATE_ADVERTISING:
+			if (pdu_adv.type != LL_PDU_ADV_IND &&
+					pdu_adv.type != LL_PDU_ADV_SCAN_IND)
+				break;
+
+			if (rcvd_pdu->type != LL_PDU_SCAN_REQ)
+				break;
+
+			scan_req_cb(rcvd_pdu);
+
+			break;
+
 		case LL_STATE_INITIATING:
 		case LL_STATE_CONNECTION:
-		case LL_STATE_ADVERTISING:
-			/* Not implemented */
 		case LL_STATE_STANDBY:
 		default:
 			/* Nothing to do */
@@ -178,10 +216,12 @@ static void t_ll_single_shot_cb(void *user_data)
 {
 	switch(current_state) {
 		case LL_STATE_ADVERTISING:
+			radio_stop();
 			radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
 					LL_CRCINIT_ADV, (uint8_t *) &pdu_adv,
 							sizeof(pdu_adv), rx);
 
+			prev_adv_ch_idx = adv_ch_idx;
 			if (!inc_adv_ch_idx())
 				timer_start(t_ll_single_shot,
 						t_adv_pdu_interval, NULL);
@@ -246,18 +286,20 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	adv_ch_map = chmap;
 
 	switch (type) {
-	case LL_PDU_ADV_IND:
 	case LL_PDU_ADV_DIRECT_IND:
+		/* TODO: Not implemented */
+		break;
+	case LL_PDU_ADV_IND:
+		pdu_adv.type = LL_PDU_ADV_IND;
+		rx = true;
+		break;
 	case LL_PDU_ADV_SCAN_IND:
-		/* Not implemented */
-		return -EINVAL;
-	case LL_PDU_ADV_NONCONN_IND:
-		if (interval < LL_ADV_INTERVAL_MIN_NONCONN
-					|| interval > LL_ADV_INTERVAL_MAX)
-			return -EINVAL;
+		pdu_adv.type = LL_PDU_ADV_SCAN_IND;
+		rx = true;
+		break;
 
+	case LL_PDU_ADV_NONCONN_IND:
 		pdu_adv.type = LL_PDU_ADV_NONCONN_IND;
-		t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 		rx = false;
 
 		break;
@@ -265,6 +307,12 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 		/* Invalid PDU */
 		return -EINVAL;
 	}
+
+	t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
+
+	if (interval < LL_ADV_INTERVAL_MIN_NONCONN
+					|| interval > LL_ADV_INTERVAL_MAX)
+			return -EINVAL;
 
 	err_code = timer_start(t_ll_interval, interval, NULL);
 	if (err_code < 0)
@@ -337,6 +385,7 @@ static void init_adv_pdus(void)
 
 	ll_set_advertising_data(NULL, 0);
 
+	pdu_scan_rsp.type = LL_PDU_SCAN_RSP;
 	pdu_scan_rsp.tx_add = laddr->type;
 	memcpy(pdu_scan_rsp.payload, laddr->addr, sizeof(laddr->addr));
 

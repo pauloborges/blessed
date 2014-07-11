@@ -41,6 +41,7 @@
 /* Link Layer specification Section 4.4.2.2, Core 4.1 page 2528 */
 #define LL_ADV_INTERVAL_MIN_CONN	20000		/* 20 ms */
 #define LL_ADV_INTERVAL_MIN_NONCONN	100000		/* 100 ms */
+#define LL_ADV_INTERVAL_MIN_SCAN	LL_ADV_INTERVAL_MIN_NONCONN
 #define LL_ADV_INTERVAL_MAX		10240000	/* 10.24 s */
 #define LL_ADV_INTERVAL_QUANTUM		625		/* 0.625 ms */
 
