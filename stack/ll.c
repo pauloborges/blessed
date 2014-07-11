@@ -54,7 +54,7 @@ typedef enum ll_states {
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
 struct __attribute__ ((packed)) ll_pdu_adv {
-	uint8_t		pdu_type:4;	/* See ll_pdu_t */
+	uint8_t		type:4;		/* See ll_pdu_t */
 	uint8_t		_rfu_0:2;	/* Reserved for future use */
 	uint8_t		tx_add:1;	/* public (0) or random (1) */
 	uint8_t		rx_add:1;	/* public (0) or random (1) */
@@ -122,7 +122,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 			 */
 			rcvd_pdu = (struct ll_pdu_adv*) pdu;
 
-			ll_adv_report_cb(rcvd_pdu->pdu_type, rcvd_pdu->tx_add,
+			ll_adv_report_cb(rcvd_pdu->type, rcvd_pdu->tx_add,
 						rcvd_pdu->payload,
 						rcvd_pdu->length - BDADDR_LEN,
 						rcvd_pdu->payload + BDADDR_LEN);
@@ -256,7 +256,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 					|| interval > LL_ADV_INTERVAL_MAX)
 			return -EINVAL;
 
-		pdu_adv.pdu_type = LL_PDU_ADV_NONCONN_IND;
+		pdu_adv.type = LL_PDU_ADV_NONCONN_IND;
 		t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 		rx = false;
 
