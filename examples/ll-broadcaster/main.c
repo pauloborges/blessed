@@ -39,12 +39,18 @@ static const bdaddr_t addr = { { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF },
 static uint8_t data[] = { 0x0F, 0x09, 0x62, 0x6C, 0x65, 0x73, 0x73, 0x65, 0x64,
 			  0x20, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65 };
 
+/* AD structure:
+ * LEN: 0x03 bytes | Appearance: 0x19 | DATA: 0x00 0x00  (unknown)
+ */
+static uint8_t scan_data[] = {0x03, 0x19, 0x00, 0x00 };
+
 int main(void)
 {
 	ll_init(&addr);
 	ll_set_advertising_data(data, sizeof(data));
-	ll_advertise_start(LL_PDU_ADV_NONCONN_IND, LL_ADV_INTERVAL_MIN_NONCONN,
-								LL_ADV_CH_ALL);
+	ll_set_scan_response_data(scan_data, sizeof(scan_data));
+	ll_advertise_start(LL_PDU_ADV_SCAN_IND, LL_ADV_INTERVAL_MIN_SCAN,
+							LL_ADV_CH_ALL);
 
 	while (1);
 
