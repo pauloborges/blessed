@@ -42,6 +42,7 @@
 #define LL_ADV_INTERVAL_MIN_CONN	20000		/* 20 ms */
 #define LL_ADV_INTERVAL_MIN_NONCONN	100000		/* 100 ms */
 #define LL_ADV_INTERVAL_MAX		10240000	/* 10.24 s */
+#define LL_ADV_INTERVAL_QUANTUM		625		/* 0.625 ms */
 
 /* Link Layer specification Section 4.4.3, Core 4.1 page 2535 */
 #define LL_SCAN_WINDOW_MAX		10240000	/* 10.24 s */

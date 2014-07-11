@@ -240,6 +240,9 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	if (!chmap || (chmap & !LL_ADV_CH_ALL))
 		return -EINVAL;
 
+	if (interval % LL_ADV_INTERVAL_QUANTUM)
+		return -EINVAL;
+
 	adv_ch_map = chmap;
 
 	switch (type) {
