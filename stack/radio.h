@@ -46,6 +46,7 @@ struct radio_driver {
 
 int16_t radio_init(struct radio_driver *driver);
 
+int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 				const uint8_t *data, uint8_t len, bool rx);
