@@ -159,16 +159,6 @@ int16_t radio_recv(void)
 	return 0;
 }
 
-int16_t radio_reply(const uint8_t *data, uint8_t len)
-{
-	NRF_RADIO->PACKETPTR = (uint32_t) data;
-
-	NRF_RADIO->TASKS_TXEN = 1UL;
-	status |= STATUS_TX;
-
-	return 0;
-}
-
 int16_t radio_stop(void)
 {
 	if (!(status & STATUS_BUSY))
