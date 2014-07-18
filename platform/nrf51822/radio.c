@@ -192,6 +192,8 @@ int16_t radio_stop(void)
 	if (!(status & STATUS_BUSY))
 		return -ENOREADY;
 
+	NRF_RADIO->SHORTS = BASE_SHORTS;
+
 	NRF_RADIO->EVENTS_DISABLED = 0UL;
 	NRF_RADIO->TASKS_DISABLE = 1UL;
 	while (NRF_RADIO->EVENTS_DISABLED == 0UL);
