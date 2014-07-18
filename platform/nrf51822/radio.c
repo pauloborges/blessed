@@ -43,6 +43,12 @@
 #define STATUS_TX			4
 #define STATUS_BUSY			(STATUS_RX | STATUS_TX)
 
+#define BASE_SHORTS							\
+	(RADIO_SHORTS_READY_START_Enabled				\
+		<< RADIO_SHORTS_READY_START_Pos)			\
+	| (RADIO_SHORTS_END_DISABLE_Enabled				\
+		<< RADIO_SHORTS_END_DISABLE_Pos)
+
 static uint8_t buf[MAX_BUF_LEN] __attribute__ ((aligned));
 static volatile uint8_t status;
 static struct radio_driver *driver;
@@ -324,10 +330,7 @@ int16_t radio_init(struct radio_driver *drv)
 	 * Enable END_DISABLE short: when the END event happens, initialize the
 	 * DISABLE task.
 	 */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled
-					<< RADIO_SHORTS_READY_START_Pos)
-					| (RADIO_SHORTS_END_DISABLE_Enabled
-					<< RADIO_SHORTS_END_DISABLE_Pos);
+	NRF_RADIO->SHORTS = BASE_SHORTS;
 
 	/* Trigger RADIO interruption when an END event happens */
 	NRF_RADIO->INTENSET = RADIO_INTENSET_END_Msk;
