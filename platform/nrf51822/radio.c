@@ -112,13 +112,10 @@ void RADIO_IRQHandler(void)
 	old_status = status;
 	status = STATUS_INITIALIZED;
 
-	if (driver == NULL)
-		return;
-
 	if (old_status & STATUS_RX) {
 		/* TODO: packet len = buf[1] + 2 (2 bytes header missing). */
 		bool crc = (NRF_RADIO->CRCSTATUS ? true : false);
-		if (driver->rx)
+		if (driver && driver->rx)
 			driver->rx(buf, crc);
 	} else if (old_status & STATUS_TX) {
 		if (rxshort) {
@@ -127,7 +124,7 @@ void RADIO_IRQHandler(void)
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
 		}
 
-		if (driver->tx)
+		if (driver && driver->tx)
 			driver->tx();
 	}
 }
