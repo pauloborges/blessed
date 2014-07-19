@@ -71,6 +71,7 @@ PLATFORM_SOURCE_FILES	= system_nrf51.c				\
 			  app_gpiote.c					\
 			  nrf_delay.c					\
 			  nrf51822.c					\
+			  delay.c					\
 			  log.c						\
 			  timer.c					\
 			  radio.c
