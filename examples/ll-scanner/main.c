@@ -31,12 +31,12 @@
 #include <blessed/bdaddr.h>
 #include <blessed/log.h>
 
-#include "nrf_delay.h"
-
 #include "ll.h"
+#include "delay.h"
 
 #define SCAN_WINDOW			200000
 #define SCAN_INTERVAL			500000
+#define SCAN_DURATION			1100000		/* 1.1 s */
 
 static const bdaddr_t addr = { { 0x14, 0x20, 0xCC, 0xDD, 0xEE, 0xFF },
 							BDADDR_TYPE_RANDOM };
@@ -84,7 +84,7 @@ int main(void)
 	ll_scan_start(LL_SCAN_PASSIVE, SCAN_INTERVAL, SCAN_WINDOW,
 							adv_report_cb);
 
-	nrf_delay_ms(1100);
+	delay(SCAN_DURATION);
 
 	ll_scan_stop();
 
