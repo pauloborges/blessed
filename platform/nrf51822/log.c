@@ -31,17 +31,20 @@
 #include <string.h>
 
 #include <app_uart.h>
-#include <nrf_delay.h>
 #include <boards.h>
+#include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
 #include <blessed/log.h>
 
 #include "nrf51822.h"
+#include "delay.h"
 
 #ifndef CONFIG_LOG_BUFFER_LEN
 #define CONFIG_LOG_BUFFER_LEN		128
 #endif
+
+#define UART_INIT_DELAY			1000 /* 1 ms */
 
 #define UNINITIALIZED			0
 #define READY				1
@@ -121,7 +124,7 @@ int16_t log_init(void)
 	state = READY;
 
 	/* Necessary to fully initialize the UART */
-	nrf_delay_ms(1);
+	delay(UART_INIT_DELAY);
 	log_print("\r\n");
 #endif
 
