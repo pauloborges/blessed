@@ -69,4 +69,7 @@ clean:
 	@echo " CLEAN"
 	@rm -rf $(BUILD_PATH) *.log
 
-.PHONY: all clean
+examples: clean all
+	$(MAKE) -C examples
+
+.PHONY: all clean examples
