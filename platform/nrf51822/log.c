@@ -25,13 +25,13 @@
  */
 
 #include <stdint.h>
-#include <stdint.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <app_uart.h>
 #include <boards.h>
+#include <nrf51.h>
 #include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
@@ -39,6 +39,7 @@
 
 #include "nrf51822.h"
 #include "delay.h"
+#include "uart.h"
 
 #ifndef CONFIG_LOG_BUFFER_LEN
 #define CONFIG_LOG_BUFFER_LEN		128
@@ -56,22 +57,15 @@ static volatile uint16_t len;
 static volatile uint8_t buffer[CONFIG_LOG_BUFFER_LEN] __attribute__ ((aligned));
 static volatile uint8_t state = UNINITIALIZED;
 
-static __inline void tx_next_byte(void)
+
+static void send_next_octet(void)
 {
 	if (pos == len) {
 		state = READY;
 		return;
 	}
 
-	app_uart_put(buffer[pos++]);
-}
-
-static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
-{
-	if (p_app_uart_evt->evt_type != APP_UART_TX_EMPTY)
-		return;
-
-	tx_next_byte();
+	uart_send(buffer[pos++]);
 }
 #endif
 
@@ -92,7 +86,7 @@ int16_t log_print(const char *format, ...)
 	pos = 0;
 	state = BUSY;
 
-	tx_next_byte();
+	send_next_octet();
 #endif
 
 	return 0;
@@ -101,26 +95,17 @@ int16_t log_print(const char *format, ...)
 int16_t log_init(void)
 {
 #if CONFIG_LOG_ENABLE
-	uint32_t err_code;
-
-	UNUSED(err_code);
-
-	app_uart_comm_params_t params = {
-		RX_PIN_NUMBER,
-		TX_PIN_NUMBER,
-		RTS_PIN_NUMBER,
-		CTS_PIN_NUMBER,
-		APP_UART_FLOW_CONTROL_ENABLED,
-		false,
-		UART_BAUDRATE_BAUDRATE_Baud115200
+	struct uart_config config = {
+		.baud = UART_BAUD_115200,
+		.rx_pin = RX_PIN_NUMBER,
+		.tx_pin = TX_PIN_NUMBER,
+		.parity_bit = false
 	};
 
 	if (state != UNINITIALIZED)
 		return -EALREADY;
 
-	APP_UART_INIT(&params, uart_evt_handler, IRQ_PRIORITY_HIGHEST,
-								err_code);
-
+	uart_init(config, send_next_octet);
 	state = READY;
 
 	/* Necessary to fully initialize the UART */
