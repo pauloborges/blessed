@@ -58,16 +58,11 @@ PLATFORM_LDFLAGS	= -T$(SDK_TEMPLATE_PATH)/gcc/$(LINKER_SCRIPT)	\
 			  -mthumb					\
 			  -mcpu=$(CPU)
 
-PLATFORM_SOURCE_PATHS	= $(SDK_SOURCE_PATH)				\
-			  $(SDK_SOURCE_PATH)/app_common			\
-			  $(SDK_TEMPLATE_PATH)				\
+PLATFORM_SOURCE_PATHS	= $(SDK_TEMPLATE_PATH)				\
 			  $(SDK_TEMPLATE_PATH/gcc)			\
 			  $(PLATFORM_PATH)
 
 PLATFORM_SOURCE_FILES	= system_nrf51.c				\
-			  app_uart.c					\
-			  app_fifo.c					\
-			  app_gpiote.c					\
 			  nrf51822.c					\
 			  delay.c					\
 			  log.c						\
