@@ -25,12 +25,13 @@
 
 #include <string.h>
 #include <stdint.h>
-
-#include <blessed/timer.h>
+#include <stdbool.h>
 
 #include <nrf51.h>
 #include <nrf51_bitfields.h>
-#include <app_timer.h>
+
+#include <blessed/timer.h>
+#include <blessed/log.h>
 
 #include "radio.h"
 
@@ -43,8 +44,11 @@
 #define ADV_EVENT			TIMER_MILLIS(1280)
 #define ADV_INTERVAL			TIMER_MILLIS(10)
 
+#define PDU_TYPE_SCAN_REQ		0x03
+
 /* Link Layer specification section 2.3, Core 4.1, page 2504
  * Link Layer specification section 2.3.1.4, Core 4.1, page 2507
+ * Link Layer specification section 2.3.2.1, Core 4.1, page 2508
  * Link Layer specification section 2.3.2.2, Core 4.1, page 2508
  *
  * ADV_SCAN_IND PDU (39 octets):
@@ -53,10 +57,19 @@
  * +--------+--------+-----------+
  *  2 octets 6 octets 0-31 octets
  *
- * Header: PDU Type=ADV_SCAN_IND, TxAddr=1, Length=15
- * AdvA: FF:EE:DD:CC:BB:AA
- * AdvData: AD structure:
- * LEN: 8 | TYPE: <<Shortened Local Name>> (0x08) | DATA: "blessed"
+ * Header:	<PDU Type=ADV_SCAN_IND, TxAddr=RANDOM, Length=15>
+ * AdvA:	<FF:EE:DD:CC:BB:AA>
+ * AdvData:	<AD: Len=8, Type="Shortened Local Name", Data="blessed">
+ *
+ * SCAN_REQ PDU (14 octets):
+ * +--------+--------+--------+
+ * | Header | ScanA  |  AdvA  |
+ * +--------+--------+--------+
+ *  2 octets 6 octets 6 octets
+ *
+ * Header:	<PDU Type=SCAN_REQ, TxAddr=???, RxAddr=RANDOM, Length=12>
+ * ScanA:	<??:??:??:??:??:??>
+ * AdvA:	<FF:EE:DD:CC:BB:AA>
  *
  * SCAN_RSP PDU (39 octets):
  * +--------+--------+---------------+
@@ -64,10 +77,9 @@
  * +--------+--------+---------------+
  *  2 octets 6 octets   0-31 octets
  *
- * Header: PDU Type=SCAN_RSP, TxAddr=1, Length=22
- * AdvA: FF:EE:DD:CC:BB:AA
- * ScanRspData: AD structure:
- * LEN: 15 | TYPE: <<Complete Local Name>> (0x09) | DATA: "blessed device"
+ * Header:	<PDU Type=SCAN_RSP, TxAddr=RANDOM, Length=22>
+ * AdvA:	<FF:EE:DD:CC:BB:AA>
+ * ScanRspData:	<AD: Len=15, Type="Complete Local Name", Data="blessed device">
  */
 
 static uint8_t adv_scan_ind[] = {
@@ -111,11 +123,39 @@ void adv_event_timeout(void *user_data)
 
 static void radio_rx(const uint8_t *pdu, bool crc)
 {
-	/* If the PDU isn't SCAN_REQ, ignore the packet */
-	if (pdu[0] != 0x83)
-		return;
+	const uint8_t *tgt_addr;
+	const uint8_t *our_addr;
+	uint8_t tgt_rxadd;
+	uint8_t our_txadd;
 
+	/* Start replying as soon as possible, if there is something wrong,
+	 * cancel it.
+	 */
 	radio_reply(scan_rsp, sizeof(scan_rsp));
+
+	/* If the PDU isn't SCAN_REQ, ignore the packet */
+	if ((pdu[0] & 0xF) != PDU_TYPE_SCAN_REQ)
+		goto stop;
+
+	tgt_addr = pdu + 8;
+	our_addr = adv_scan_ind + 2;
+
+	/* If AdvA isn't our address, ignore the packet */
+	if (memcmp(tgt_addr, our_addr, 6))
+		goto stop;
+
+
+	tgt_rxadd = (pdu[0] & 0x10) >> 5;
+	our_txadd = (adv_scan_ind[0] & 0x8) >> 4;
+
+	/* If RxAdd isn't our address type, ignore the packet */
+	if (tgt_rxadd != our_txadd)
+		goto stop;
+
+	return;
+
+stop:
+	radio_stop();
 }
 
 static struct radio_driver radio_driver = {
@@ -125,11 +165,16 @@ static struct radio_driver radio_driver = {
 
 int main(void)
 {
+	log_init();
 	timer_init();
 	radio_init(&radio_driver);
 
 	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
+
+	DBG("Advertising ADV_SCAN_IND PDUs");
+	DBG("Time between PDUs:   %u us", ADV_INTERVAL);
+	DBG("Time between events: %u us", ADV_EVENT);
 
 	timer_start(adv_event, ADV_EVENT, NULL);
 	adv_event_timeout(NULL);
