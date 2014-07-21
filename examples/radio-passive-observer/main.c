@@ -47,7 +47,12 @@
 #define SCAN_INTERVAL			TIMER_MILLIS(10000)
 
 static uint8_t channels[] = { 37, 38, 39 };
-static uint8_t idx = 0;
+static uint8_t idx = 0xFF;
+
+static char *pdus[] = {
+	"ADV_IND", "ADV_DIRECT_IND", "ADV_NONCONN_IND", "SCAN_REQ",
+	"SCAN_RSP", "CONNECT_REQ", "ADV_SCAN_IND"
+};
 
 static int16_t scan_window;
 static int16_t scan_interval;
@@ -71,31 +76,34 @@ void scan_window_timeout(void *user_data)
 
 void scan_interval_timeout(void *user_data)
 {
-	idx = (idx + 1) % sizeof(channels);
-
-	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 	timer_start(scan_window, SCAN_WINDOW, NULL);
+
+	idx = (uint8_t) (idx + 1) % sizeof(channels);
+	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 }
 
 static void radio_rx(const uint8_t *pdu, bool crc)
 {
+	uint8_t pdu_type = pdu[0] & 0xF;
+	uint8_t length = pdu[1] & 0x3F;
+	const char *address;
+
 	if (!crc) {
-		DBG("ch %u bad crc", channels[idx]);
-		goto recv;
+		ERROR("ch %u BAD CRC", channels[idx]);
+		goto next_recv;
 	}
 
-	/* Link Layer specification section 2.3, Core 4.1, page 2505
-	 *
-	 * The length is the 6 LSB, and the minimum allowed payload is 6 bytes.
-	 */
-	if ((pdu[1] & 0x3F) < 6) {
-		DBG("ch %u bad length", channels[idx]);
-		goto recv;
+	/* The minimum allowed payload is 6 bytes */
+	if (length < 6) {
+		ERROR("ch %u BAD LENGTH %u", channels[idx], length);
+		goto next_recv;
 	}
 
-	DBG("ch %u (%s)", channels[idx], format_address(pdu + 2));
+	address = format_address(pdu + 2);
 
-recv:
+	DBG("%s ch %u pdu %s", address, channels[idx], pdus[pdu_type]);
+
+next_recv:
 	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 }
 
@@ -112,6 +120,10 @@ int main(void)
 
 	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
 	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);
+
+	DBG("Scanning");
+	DBG("Scan window:   %u ms", SCAN_WINDOW / 1000);
+	DBG("Scan interval: %u ms", SCAN_INTERVAL / 1000);
 
 	timer_start(scan_interval, SCAN_INTERVAL, NULL);
 	scan_interval_timeout(NULL);
