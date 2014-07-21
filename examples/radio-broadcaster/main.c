@@ -51,17 +51,17 @@
  * +--------+--------+---------+
  *  2 octets 6 octets 31 octets
  *
- * Header: PDU Type=ADV_NONCONN_IND, TxAddr=1, Length=22
- * AdvA: FF:EE:DD:CC:BB:AA
- * AdvData: AD structure:
- * LEN: 15 bytes | LOCAL NAME: 0x09 | DATA: "blessed device"
+ * Header:	<PDU Type=ADV_NONCONN_IND, TxAddr=RANDOM, Length=22>
+ * AdvA:	<FF:EE:DD:CC:BB:AA>
+ * AdvData:	<AD: Len=15, Type="Complete Local Name", Data="blessed device">
  */
-static uint8_t pdu[] = {	0x42, 0x16,	/* Header */
-				0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
-				0x0F,	/* EIR Struct 1 length */
-				0x09,	/* Type: Complete local name */
-				0x62, 0x6C, 0x65, 0x73, 0x73, 0x65, 0x64, 0x20,
-				0x64, 0x65, 0x76, 0x69, 0x63, 0x65
+static uint8_t adv_nonconn_ind[] = {
+	0x42, 0x16,					/* Header */
+	0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,		/* AdvA */
+	0x0F,						/* AD Length */
+	0x09,						/* AD Type */
+	0x62, 0x6C, 0x65, 0x73, 0x73, 0x65, 0x64, 0x20,	/* AD Data */
+	0x64, 0x65, 0x76, 0x69, 0x63, 0x65
 };
 
 static uint8_t channels[] = { 37, 38, 39 };
@@ -72,8 +72,8 @@ static int16_t adv_interval;
 
 void adv_interval_timeout(void *user_data)
 {
-	radio_send(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC, pdu,
-							sizeof(pdu), false);
+	radio_send(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC,
+			adv_nonconn_ind, sizeof(adv_nonconn_ind), false);
 
 	if (idx < 3)
 		timer_start(adv_interval, ADV_INTERVAL, NULL);
@@ -94,9 +94,9 @@ int main(void)
 	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
 
-	DBG("Advertising with:");
-	DBG("Time between PDUs: %u ms", ADV_INTERVAL);
-	DBG("T_advEvent:        %u ms", ADV_EVENT);
+	DBG("Advertising ADV_NONCONN_IND PDUs");
+	DBG("Time between PDUs:   %u ms", ADV_INTERVAL / 1000);
+	DBG("Time between events: %u ms", ADV_EVENT / 1000);
 
 	timer_start(adv_event, ADV_EVENT, NULL);
 	adv_event_timeout(NULL);
