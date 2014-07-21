@@ -37,8 +37,14 @@
 #define ADV_CHANNEL_AA			0x8E89BED6
 #define ADV_CHANNEL_CRC			0x555555
 
-#define SCAN_WINDOW			TIMER_MILLIS(1000)
-#define SCAN_INTERVAL			TIMER_MILLIS(2000)
+/* Ideally both timers should have the same value in this example. But
+ * scan_window_timeout() must be called first than scan_window_timeout() to not
+ * break the radio logic. Since the scan_interval timer is started several
+ * microseconds before scan_window, the last must have a smaller timeout value.
+ * The link layer implementation must address this corner case.
+ */
+#define SCAN_WINDOW			TIMER_MILLIS(9900)
+#define SCAN_INTERVAL			TIMER_MILLIS(10000)
 
 static uint8_t channels[] = { 37, 38, 39 };
 static uint8_t idx = 0;
