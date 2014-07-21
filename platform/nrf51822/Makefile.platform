@@ -63,7 +63,6 @@ PLATFORM_SOURCE_PATHS	= $(SDK_TEMPLATE_PATH)				\
 			  $(PLATFORM_PATH)
 
 PLATFORM_SOURCE_FILES	= system_nrf51.c				\
-			  nrf51822.c					\
 			  delay.c					\
 			  log.c						\
 			  timer.c					\
