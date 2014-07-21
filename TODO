@@ -1,0 +1,19 @@
+Remove sources:
+* system_nrf51.c
+* gcc_startup_nrf51.s
+
+Remove headers:
+* boards.h
+* pca10001.h
+* system_nrf51.h
+* nrf.h
+* nrf51.h
+* nrf51_bitfields.h
+
+Copy files:
+* core_cm0.h
+* core_cmInstr.h
+* core_cmFunc.h
+* gcc_nrf51_common.ld
+* gcc_nrf51_blank_xxaa.ld
+* gcc_nrf51_blank_xxab.ld
