@@ -131,7 +131,7 @@ static void radio_rx(const uint8_t *pdu, bool crc)
 	/* Start replying as soon as possible, if there is something wrong,
 	 * cancel it.
 	 */
-	radio_reply(scan_rsp, sizeof(scan_rsp));
+	radio_send(scan_rsp, sizeof(scan_rsp), false);
 
 	/* If the PDU isn't SCAN_REQ, ignore the packet */
 	if ((pdu[0] & 0xF) != PDU_TYPE_SCAN_REQ)
