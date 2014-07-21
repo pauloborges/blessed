@@ -79,6 +79,8 @@ static void scan_interval_timeout(void *user_data)
 	timer_start(scan_window, SCAN_WINDOW, NULL);
 
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
+
+	radio_prepare(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 }
 

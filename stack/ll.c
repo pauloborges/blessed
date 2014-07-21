@@ -217,6 +217,8 @@ static void t_ll_single_shot_cb(void *user_data)
 	switch(current_state) {
 		case LL_STATE_ADVERTISING:
 			radio_stop();
+			radio_prepare(adv_chs[adv_ch_idx],
+					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
 			radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
 					LL_CRCINIT_ADV, (uint8_t *) &pdu_adv,
 							sizeof(pdu_adv), rx);
@@ -256,6 +258,8 @@ static void t_ll_interval_cb(void *user_data)
 			if(!inc_adv_ch_idx())
 				adv_ch_idx = first_adv_ch_idx();
 
+			radio_prepare(adv_chs[adv_ch_idx],
+					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
 			scan_radio_recv();
 			timer_start(t_ll_single_shot, t_scan_window, NULL);
 			break;
