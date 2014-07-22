@@ -30,6 +30,8 @@
 
 #include "ll.h"
 
+#define ADV_INTERVAL			1280000	/* 1280 ms */
+
 static const bdaddr_t addr = { { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF },
 							BDADDR_TYPE_RANDOM };
 
@@ -49,8 +51,7 @@ int main(void)
 	ll_init(&addr);
 	ll_set_advertising_data(data, sizeof(data));
 	ll_set_scan_response_data(scan_data, sizeof(scan_data));
-	ll_advertise_start(LL_PDU_ADV_SCAN_IND, LL_ADV_INTERVAL_MIN_SCAN,
-							LL_ADV_CH_ALL);
+	ll_advertise_start(LL_PDU_ADV_SCAN_IND, ADV_INTERVAL, LL_ADV_CH_ALL);
 
 	while (1);
 
