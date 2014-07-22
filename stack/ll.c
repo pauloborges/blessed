@@ -283,46 +283,42 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	if (interval % LL_ADV_INTERVAL_QUANTUM)
 		return -EINVAL;
 
+	if (interval < LL_ADV_INTERVAL_MIN_NONCONN
+					|| interval > LL_ADV_INTERVAL_MAX)
+			return -EINVAL;
+
 	adv_ch_map = chmap;
 
 	switch (type) {
-	case LL_PDU_ADV_DIRECT_IND:
-		/* TODO: Not implemented */
-		break;
 	case LL_PDU_ADV_IND:
-		pdu_adv.type = LL_PDU_ADV_IND;
-		rx = true;
-		break;
 	case LL_PDU_ADV_SCAN_IND:
-		pdu_adv.type = LL_PDU_ADV_SCAN_IND;
 		rx = true;
 		break;
 
 	case LL_PDU_ADV_NONCONN_IND:
-		pdu_adv.type = LL_PDU_ADV_NONCONN_IND;
 		rx = false;
-
 		break;
+
+	case LL_PDU_ADV_DIRECT_IND:
+		/* TODO: Not implemented */
 	default:
 		/* Invalid PDU */
 		return -EINVAL;
 	}
 
+	pdu_adv.type = type;
 	t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 
-	if (interval < LL_ADV_INTERVAL_MIN_NONCONN
-					|| interval > LL_ADV_INTERVAL_MAX)
-			return -EINVAL;
+	DBG("PDU interval %u ms, event interval %u ms",
+				t_adv_pdu_interval / 1000, interval / 1000);
 
 	err_code = timer_start(t_ll_interval, interval, NULL);
 	if (err_code < 0)
 		return err_code;
 
 	current_state = LL_STATE_ADVERTISING;
-	t_ll_interval_cb(NULL);
 
-	DBG("PDU interval %uus, event interval %uus", t_adv_pdu_interval,
-								interval);
+	t_ll_interval_cb(NULL);
 
 	return 0;
 }
