@@ -54,3 +54,4 @@ int16_t radio_send(const uint8_t *data, uint32_t flags);
 int16_t radio_stop(void);
 
 int16_t radio_set_tx_power(radio_power_t power);
+void radio_set_out_buffer(uint8_t *buf);
