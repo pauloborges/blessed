@@ -149,7 +149,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 			/* Receive new packets while the radio is not explicitly
 			 * stopped
 			 */
-			radio_recv();
+			radio_recv(0);
 			break;
 
 		case LL_STATE_ADVERTISING:
@@ -250,7 +250,7 @@ static void t_ll_interval_cb(void *user_data)
 
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			radio_recv();
+			radio_recv(0);
 			timer_start(t_ll_single_shot, t_scan_window, NULL);
 			break;
 

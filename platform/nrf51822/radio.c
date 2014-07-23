@@ -93,6 +93,13 @@ void RADIO_IRQHandler(void)
 	status = STATUS_INITIALIZED;
 
 	if (old_status & STATUS_RX) {
+		if (flags & RADIO_FLAGS_TX_NEXT) {
+			flags &= ~RADIO_FLAGS_TX_NEXT;
+			status |= STATUS_TX;
+			NRF_RADIO->PACKETPTR = (uint32_t) outbuf;
+			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
+		}
+
 		if (driver && driver->rx)
 			driver->rx(inbuf, NRF_RADIO->CRCSTATUS);
 	} else if (old_status & STATUS_TX) {
@@ -146,11 +153,16 @@ int16_t radio_send(const uint8_t *data, uint32_t f)
 	return 0;
 }
 
-int16_t radio_recv(void)
+int16_t radio_recv(uint32_t f)
 {
+	status |= STATUS_RX;
+	flags |= f;
+
+	if (f & RADIO_FLAGS_TX_NEXT)
+		NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
+
 	NRF_RADIO->PACKETPTR = (uint32_t) inbuf;
 	NRF_RADIO->TASKS_RXEN = 1UL;
-	status |= STATUS_RX;
 
 	return 0;
 }
