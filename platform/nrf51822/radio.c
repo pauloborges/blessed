@@ -114,9 +114,8 @@ void RADIO_IRQHandler(void)
 	status = STATUS_INITIALIZED;
 
 	if (old_status & STATUS_RX) {
-		bool crc = (NRF_RADIO->CRCSTATUS ? true : false);
 		if (driver && driver->rx)
-			driver->rx(buf, crc);
+			driver->rx(buf, NRF_RADIO->CRCSTATUS);
 	} else if (old_status & STATUS_TX) {
 		if (rxshort) {
 			status |= STATUS_RX;
