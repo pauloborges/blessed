@@ -313,12 +313,10 @@ int16_t radio_init(struct radio_driver *drv)
 	 * Configure the header size. The nRF51822 has 3 fields before the
 	 * payload field: S0, LENGTH and S1. These fields can be used to store
 	 * the PDU header.
-	 *
-	 * FIXME: These header sizes only works for advertise channel PDUs
 	 */
-	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos)	/* 1 byte */
-			| (8UL << RADIO_PCNF0_LFLEN_Pos)	/* 6 bits */
-			| (0UL << RADIO_PCNF0_S1LEN_Pos);	/* 2 bits */
+	NRF_RADIO->PCNF0 = (1UL << RADIO_PCNF0_S0LEN_Pos)
+			| (8UL << RADIO_PCNF0_LFLEN_Pos)
+			| (0UL << RADIO_PCNF0_S1LEN_Pos);
 
 	/* nRF51 Series Reference Manual v2.1, section 16.1.8, page 76
 	 * nRF51 Series Reference Manual v2.1, section 16.1.10-11, pages 78-80
