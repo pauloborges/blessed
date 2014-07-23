@@ -114,7 +114,6 @@ void RADIO_IRQHandler(void)
 	status = STATUS_INITIALIZED;
 
 	if (old_status & STATUS_RX) {
-		/* TODO: packet len = buf[1] + 2 (2 bytes header missing). */
 		bool crc = (NRF_RADIO->CRCSTATUS ? true : false);
 		if (driver && driver->rx)
 			driver->rx(buf, crc);
