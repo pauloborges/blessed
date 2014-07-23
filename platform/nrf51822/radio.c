@@ -86,9 +86,11 @@ static __inline int8_t ch2freq(uint8_t ch)
 void RADIO_IRQHandler(void)
 {
 	uint8_t old_status;
+	bool active;
 
 	NRF_RADIO->EVENTS_END = 0UL;
 
+	active = false;
 	old_status = status;
 	status = STATUS_INITIALIZED;
 
@@ -96,22 +98,24 @@ void RADIO_IRQHandler(void)
 		if (flags & RADIO_FLAGS_TX_NEXT) {
 			flags &= ~RADIO_FLAGS_TX_NEXT;
 			status |= STATUS_TX;
+			active = true;
 			NRF_RADIO->PACKETPTR = (uint32_t) outbuf;
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
 		}
 
 		if (driver && driver->rx)
-			driver->rx(inbuf, NRF_RADIO->CRCSTATUS);
+			driver->rx(inbuf, NRF_RADIO->CRCSTATUS, active);
 	} else if (old_status & STATUS_TX) {
 		if (flags & RADIO_FLAGS_RX_NEXT) {
 			flags &= ~RADIO_FLAGS_RX_NEXT;
 			status |= STATUS_RX;
+			active = true;
 			NRF_RADIO->PACKETPTR = (uint32_t) inbuf;
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
 		}
 
 		if (driver && driver->tx)
-			driver->tx();
+			driver->tx(active);
 	}
 }
 

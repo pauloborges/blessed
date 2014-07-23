@@ -126,7 +126,7 @@ static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
 /**@brief Function called by the radio driver (PHY layer) on packet RX
  * Dispatch the event according to the LL state
  */
-static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
+static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
 

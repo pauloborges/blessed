@@ -84,7 +84,7 @@ static void scan_interval_timeout(void *user_data)
 	radio_recv(0);
 }
 
-static void radio_rx(const uint8_t *pdu, bool crc)
+static void radio_rx(const uint8_t *pdu, bool crc, bool active)
 {
 	uint8_t pdu_type = pdu[0] & 0xF;
 	uint8_t length = pdu[1] & 0x3F;

@@ -121,7 +121,7 @@ static void adv_event_timeout(void *user_data)
 	adv_interval_timeout(NULL);
 }
 
-static void radio_rx(const uint8_t *pdu, bool crc)
+static void radio_rx(const uint8_t *pdu, bool crc, bool active)
 {
 	const uint8_t *tgt_addr;
 	const uint8_t *our_addr;

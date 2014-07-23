@@ -42,9 +42,13 @@ typedef enum radio_power {
 	RADIO_POWER_N30_DBM
 } radio_power_t;
 
+/* The active parameter informs if the radio is currently active (e.g. because
+ * of a TX/RX_NEXT flag). So, if the callback implementation wants to operate
+ * the radio, it will need to first stop the radio.
+ */
 struct radio_driver {
-	void (*rx) (const uint8_t *pdu, bool crc);
-	void (*tx) (void); /* TODO: Add id */
+	void (*rx) (const uint8_t *pdu, bool crc, bool active);
+	void (*tx) (bool active); /* TODO: Add id */
 };
 
 int16_t radio_init(struct radio_driver *driver);
