@@ -44,6 +44,14 @@
 #define ADV_EVENT			TIMER_MILLIS(1280)
 #define ADV_INTERVAL			TIMER_MILLIS(10)
 
+/* The time between packets is 150 us. But we are only notified when a
+ * transmission or reception is completed. So we need to consider the time to
+ * receive the packet. Empirically, a SCAN_REQ roughly took 100 us to be totally
+ * received, which gives us a total timeout of 250 us. But we will consider a
+ * bigger window to guarantee the reception.
+ */
+#define T_IFS				500
+
 #define PDU_TYPE_SCAN_REQ		0x03
 
 /* Link Layer specification section 2.3, Core 4.1, page 2504
@@ -104,6 +112,12 @@ static int8_t idx;
 
 static int16_t adv_event;
 static int16_t adv_interval;
+static int16_t t_ifs;
+
+void t_ifs_timeout(void *user_data)
+{
+	radio_stop();
+}
 
 static void adv_interval_timeout(void *user_data)
 {
@@ -129,9 +143,10 @@ static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 	uint8_t our_txadd;
 
 	/* Start replying as soon as possible, if there is something wrong,
-	 * cancel it.
+	 * cancel it. Also, stop the IFS timer.
 	 */
 	radio_send(scan_rsp, 0);
+	timer_stop(t_ifs);
 
 	/* If the PDU isn't SCAN_REQ, ignore the packet */
 	if ((pdu[0] & 0xF) != PDU_TYPE_SCAN_REQ)
@@ -158,15 +173,21 @@ stop:
 	radio_stop();
 }
 
+static void radio_send_cb(bool active)
+{
+	timer_start(t_ifs, T_IFS, NULL);
+}
+
 int main(void)
 {
 	log_init();
 	timer_init();
 	radio_init();
-	radio_set_callbacks(radio_recv_cb, NULL);
+	radio_set_callbacks(radio_recv_cb, radio_send_cb);
 
 	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
+	t_ifs = timer_create(TIMER_SINGLESHOT, t_ifs_timeout);
 
 	DBG("Advertising ADV_SCAN_IND PDUs");
 	DBG("Time between PDUs:   %u us", ADV_INTERVAL);
