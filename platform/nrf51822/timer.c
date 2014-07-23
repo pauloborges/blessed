@@ -208,7 +208,7 @@ int16_t timer_stop(int16_t id)
 	if (id < 0)
 		return -EINVAL;
 
-	if (!timers[id].enabled)
+	if (!timers[id].active)
 		return -EINVAL;
 
 	CLR_SET_MASKS(id, clr_mask, set_mask);
