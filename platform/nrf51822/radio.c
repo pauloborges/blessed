@@ -37,6 +37,7 @@
 #include "nrf51822.h"
 
 #define MAX_BUF_LEN			RADIO_MAX_PDU
+#define MAX_PAYLOAD_LEN			(RADIO_MAX_PDU - 2)
 
 #define STATUS_INITIALIZED		1
 #define STATUS_RX			2
@@ -280,7 +281,7 @@ int16_t radio_init(struct radio_driver *drv)
 	 */
 	NRF_RADIO->PCNF1 =
 		(RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos) |
-		(MAX_BUF_LEN << RADIO_PCNF1_MAXLEN_Pos) |
+		(MAX_PAYLOAD_LEN << RADIO_PCNF1_MAXLEN_Pos) |
 		(3UL << RADIO_PCNF1_BALEN_Pos);
 
 	/* nRF51 Series Reference Manual v2.1, section 16.1.4, page 74
