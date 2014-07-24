@@ -53,7 +53,8 @@
 static uint8_t inbuf[MAX_BUF_LEN] __attribute__ ((aligned));
 static uint8_t *outbuf;
 
-static struct radio_driver *driver;
+static radio_recv_cb_t recv_cb;
+static radio_send_cb_t send_cb;
 
 static volatile uint8_t status;
 static volatile uint32_t flags;
@@ -103,8 +104,8 @@ void RADIO_IRQHandler(void)
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
 		}
 
-		if (driver && driver->rx)
-			driver->rx(inbuf, NRF_RADIO->CRCSTATUS, active);
+		if (recv_cb)
+			recv_cb(inbuf, NRF_RADIO->CRCSTATUS, active);
 	} else if (old_status & STATUS_TX) {
 		if (flags & RADIO_FLAGS_RX_NEXT) {
 			flags &= ~RADIO_FLAGS_RX_NEXT;
@@ -114,9 +115,17 @@ void RADIO_IRQHandler(void)
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
 		}
 
-		if (driver && driver->tx)
-			driver->tx(active);
+		if (send_cb)
+			send_cb(active);
 	}
+}
+
+int16_t radio_set_callbacks(radio_recv_cb_t rcb, radio_send_cb_t scb)
+{
+	recv_cb = rcb;
+	send_cb = scb;
+
+	return 0;
 }
 
 int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit)
@@ -234,7 +243,7 @@ int16_t radio_set_tx_power(radio_power_t power)
 	return -EINVAL;
 }
 
-int16_t radio_init(struct radio_driver *drv)
+int16_t radio_init(void)
 {
 	if (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0UL) {
 		NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
@@ -329,6 +338,7 @@ int16_t radio_init(struct radio_driver *drv)
 	NVIC_ClearPendingIRQ(RADIO_IRQn);
 	NVIC_EnableIRQ(RADIO_IRQn);
 
+	radio_set_callbacks(NULL, NULL);
 	radio_set_tx_power(RADIO_POWER_0_DBM);
 	radio_set_out_buffer(NULL);
 
@@ -336,7 +346,6 @@ int16_t radio_init(struct radio_driver *drv)
 	memset(inbuf, 0, sizeof(inbuf));
 
 	status = STATUS_INITIALIZED;
-	driver = drv;
 
 	return 0;
 }

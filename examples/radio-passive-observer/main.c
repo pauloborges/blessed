@@ -84,7 +84,7 @@ static void scan_interval_timeout(void *user_data)
 	radio_recv(0);
 }
 
-static void radio_rx(const uint8_t *pdu, bool crc, bool active)
+static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	uint8_t pdu_type = pdu[0] & 0xF;
 	uint8_t length = pdu[1] & 0x3F;
@@ -109,16 +109,12 @@ next_recv:
 	radio_recv(0);
 }
 
-static struct radio_driver radio_driver = {
-	.rx = radio_rx,
-	.tx = NULL,
-};
-
 int main(void)
 {
 	log_init();
 	timer_init();
-	radio_init(&radio_driver);
+	radio_init();
+	radio_set_callbacks(radio_recv_cb, NULL);
 
 	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
 	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);

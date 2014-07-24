@@ -121,7 +121,7 @@ static void adv_event_timeout(void *user_data)
 	adv_interval_timeout(NULL);
 }
 
-static void radio_rx(const uint8_t *pdu, bool crc, bool active)
+static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	const uint8_t *tgt_addr;
 	const uint8_t *our_addr;
@@ -158,16 +158,12 @@ stop:
 	radio_stop();
 }
 
-static struct radio_driver radio_driver = {
-	.rx = radio_rx,
-	.tx = NULL,
-};
-
 int main(void)
 {
 	log_init();
 	timer_init();
-	radio_init(&radio_driver);
+	radio_init();
+	radio_set_callbacks(radio_recv_cb, NULL);
 
 	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
 	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);

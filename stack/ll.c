@@ -173,12 +173,6 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 	}
 }
 
-/** Radio driver used by the Link Layer */
-static struct radio_driver ll_radio_driver = {
-	.rx = ll_on_radio_rx,
-	.tx = NULL,
-};
-
 static __inline uint8_t first_adv_ch_idx(void)
 {
 	if (adv_ch_map & LL_ADV_CH_37)
@@ -303,6 +297,8 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	pdu_adv.type = type;
 	t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 
+	radio_set_callbacks(rx ? ll_on_radio_rx : NULL, NULL);
+
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
 
@@ -397,7 +393,7 @@ int16_t ll_init(const bdaddr_t *addr)
 	if (err_code < 0)
 		return err_code;
 
-	err_code = radio_init(&ll_radio_driver);
+	err_code = radio_init();
 	if (err_code < 0)
 		return err_code;
 
@@ -450,6 +446,8 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 		default:
 			return -EINVAL;
 	}
+
+	radio_set_callbacks(ll_on_radio_rx, NULL);
 
 	/* Setup timer and save window length */
 	t_scan_window = window;

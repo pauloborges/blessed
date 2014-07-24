@@ -46,13 +46,12 @@ typedef enum radio_power {
  * of a TX/RX_NEXT flag). So, if the callback implementation wants to operate
  * the radio, it will need to first stop the radio.
  */
-struct radio_driver {
-	void (*rx) (const uint8_t *pdu, bool crc, bool active);
-	void (*tx) (bool active); /* TODO: Add id */
-};
+typedef void (*radio_recv_cb_t) (const uint8_t *pdu, bool crc, bool active);
+typedef void (*radio_send_cb_t) (bool active);
 
-int16_t radio_init(struct radio_driver *driver);
+int16_t radio_init(void);
 
+int16_t radio_set_callbacks(radio_recv_cb_t recv_cb, radio_send_cb_t send_cb);
 int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_recv(uint32_t flags);
 int16_t radio_send(const uint8_t *data, uint32_t flags);
