@@ -55,32 +55,18 @@ struct timer {
 static struct timer timers[MAX_TIMERS];
 static uint8_t active = 0;
 
-#define CLR_SET_MASKS(id, clr, set)					\
-	switch (id) {							\
-	case 0:								\
-		clr = TIMER_INTENCLR_COMPARE0_Msk;			\
-		set = TIMER_INTENSET_COMPARE0_Msk;			\
-		break;							\
-	case 1:								\
-		clr = TIMER_INTENCLR_COMPARE1_Msk;			\
-		set = TIMER_INTENSET_COMPARE1_Msk;			\
-		break;							\
-	case 2:								\
-		clr = TIMER_INTENCLR_COMPARE2_Msk;			\
-		set = TIMER_INTENSET_COMPARE2_Msk;			\
-		break;							\
-	case 3:								\
-		clr = TIMER_INTENCLR_COMPARE3_Msk;			\
-		set = TIMER_INTENSET_COMPARE3_Msk;			\
-		break;							\
-	}
+static __inline void get_clr_set_masks(uint8_t id, uint32_t *clr, uint32_t *set)
+{
+	*clr = TIMER_INTENCLR_COMPARE0_Msk << id;
+	*set = TIMER_INTENSET_COMPARE0_Msk << id;
+}
 
 static __inline void update_cc(uint8_t id, uint64_t ticks)
 {
 	uint32_t clr_mask = 0;
 	uint32_t set_mask = 0;
 
-	CLR_SET_MASKS(id, clr_mask, set_mask);
+	get_clr_set_masks(id, &clr_mask, &set_mask);
 
 	NRF_TIMER0->INTENCLR = clr_mask;
 	NRF_TIMER0->TASKS_CAPTURE[id] = 1UL;
@@ -203,15 +189,13 @@ int16_t timer_stop(int16_t id)
 	uint32_t clr_mask = 0;
 	uint32_t set_mask = 0;
 
-	UNUSED(set_mask);
-
 	if (id < 0)
 		return -EINVAL;
 
 	if (!timers[id].active)
 		return -EINVAL;
 
-	CLR_SET_MASKS(id, clr_mask, set_mask);
+	get_clr_set_masks(id, &clr_mask, &set_mask);
 	NRF_TIMER0->INTENCLR = clr_mask;
 
 	timers[id].active = 0;
