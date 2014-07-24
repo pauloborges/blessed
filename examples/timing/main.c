@@ -34,14 +34,14 @@
 #define TIMER2				TIMER_MILLIS(250)
 #define TIMER3				TIMER_MILLIS(10000)
 
-uint16_t counter = 0;
-uint16_t timer_data = 0;
+static uint16_t counter = 0;
+static uint16_t timer_data = 0;
 
-int16_t timer1;
-int16_t timer2;
-int16_t timer3;
+static int16_t timer1;
+static int16_t timer2;
+static int16_t timer3;
 
-void timeout1(void *user_data)
+static void timeout1(void *user_data)
 {
 	DBG("%u second(s)", ++counter);
 
@@ -51,7 +51,7 @@ void timeout1(void *user_data)
 	}
 }
 
-void timeout2(void *user_data)
+static void timeout2(void *user_data)
 {
 	uint16_t *data = user_data;
 	(*data)++;
@@ -59,7 +59,7 @@ void timeout2(void *user_data)
 	DBG("Data: %u", *data);
 }
 
-void timeout3(void *user_data)
+static void timeout3(void *user_data)
 {
 	DBG("singleshot timer after %d seconds", TIMER3 / 1000);
 }
