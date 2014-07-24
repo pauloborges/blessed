@@ -69,14 +69,14 @@ static __inline const char *format_address(const uint8_t *data)
 	return address;
 }
 
-static void scan_window_timeout(void *user_data)
+static void scan_window_timeout(void)
 {
 	radio_stop();
 }
 
-static void scan_interval_timeout(void *user_data)
+static void scan_interval_timeout(void)
 {
-	timer_start(scan_window, SCAN_WINDOW, NULL);
+	timer_start(scan_window, SCAN_WINDOW);
 
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
 
@@ -123,8 +123,8 @@ int main(void)
 	DBG("Scan window:   %u ms", SCAN_WINDOW / 1000);
 	DBG("Scan interval: %u ms", SCAN_INTERVAL / 1000);
 
-	timer_start(scan_interval, SCAN_INTERVAL, NULL);
-	scan_interval_timeout(NULL);
+	timer_start(scan_interval, SCAN_INTERVAL);
+	scan_interval_timeout();
 
 	while (1);
 

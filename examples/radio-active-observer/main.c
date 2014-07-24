@@ -72,13 +72,13 @@ static char *pdus[] = {
 	"SCAN_RSP", "CONNECT_REQ", "ADV_SCAN_IND"
 };
 
-static void t_ifs_timeout(void *user_data)
+static void t_ifs_timeout(void)
 {
 	radio_stop();
 	radio_recv(RADIO_FLAGS_TX_NEXT);
 }
 
-static void scan_window_timeout(void *user_data)
+static void scan_window_timeout(void)
 {
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
 
@@ -136,7 +136,7 @@ next_recv:
 static void radio_send_cb(bool active)
 {
 	radio_recv(0);
-	timer_start(t_ifs, T_IFS, NULL);
+	timer_start(t_ifs, T_IFS);
 }
 
 int main(void)
@@ -153,8 +153,8 @@ int main(void)
 	DBG("Active scanning");
 	DBG("Scan window/interval: %u ms", SCAN_WINDOW / 1000);
 
-	timer_start(scan_window, SCAN_WINDOW, NULL);
-	scan_window_timeout(NULL);
+	timer_start(scan_window, SCAN_WINDOW);
+	scan_window_timeout();
 
 	while (1);
 

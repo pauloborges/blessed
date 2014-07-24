@@ -46,7 +46,6 @@
 struct timer {
 	uint32_t ticks;
 	timer_cb cb;
-	void *data;
 	uint8_t enabled:1;
 	uint8_t active:1;
 	uint8_t type:1;
@@ -97,7 +96,7 @@ void TIMER0_IRQHandler(void)
 				timers[id].active = 0;
 			}
 
-			timers[id].cb(timers[id].data);
+			timers[id].cb();
 		}
 	}
 }
@@ -153,7 +152,7 @@ create:
 	return id;
 }
 
-int16_t timer_start(int16_t id, uint32_t us, void *user_data)
+int16_t timer_start(int16_t id, uint32_t us)
 {
 	uint32_t ticks;
 
@@ -171,7 +170,6 @@ int16_t timer_start(int16_t id, uint32_t us, void *user_data)
 
 	timers[id].active = 1;
 	timers[id].ticks = ticks;
-	timers[id].data = user_data;
 
 	update_cc(id, (uint64_t) ticks);
 

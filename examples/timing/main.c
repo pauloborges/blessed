@@ -31,17 +31,14 @@
 #include <blessed/log.h>
 
 #define TIMER1				TIMER_MILLIS(1000)
-#define TIMER2				TIMER_MILLIS(250)
-#define TIMER3				TIMER_MILLIS(10000)
+#define TIMER2				TIMER_MILLIS(3000)
 
 static uint16_t counter = 0;
-static uint16_t timer_data = 0;
 
 static int16_t timer1;
 static int16_t timer2;
-static int16_t timer3;
 
-static void timeout1(void *user_data)
+static void timeout1(void)
 {
 	DBG("%u second(s)", ++counter);
 
@@ -51,17 +48,9 @@ static void timeout1(void *user_data)
 	}
 }
 
-static void timeout2(void *user_data)
+static void timeout2(void)
 {
-	uint16_t *data = user_data;
-	(*data)++;
-
-	DBG("Data: %u", *data);
-}
-
-static void timeout3(void *user_data)
-{
-	DBG("singleshot timer after %d seconds", TIMER3 / 1000);
+	DBG("singleshot timer after %d ms", TIMER2 / 1000);
 }
 
 int main(void)
@@ -70,12 +59,10 @@ int main(void)
 	timer_init();
 
 	timer1 = timer_create(TIMER_REPEATED, timeout1);
-	timer2 = timer_create(TIMER_REPEATED, timeout2);
-	timer3 = timer_create(TIMER_SINGLESHOT, timeout3);
+	timer2 = timer_create(TIMER_SINGLESHOT, timeout2);
 
-	timer_start(timer1, TIMER1, NULL);
-	timer_start(timer2, TIMER2, &timer_data);
-	timer_start(timer3, TIMER3, NULL);
+	timer_start(timer1, TIMER1);
+	timer_start(timer2, TIMER2);
 
 	while (1);
 

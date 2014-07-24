@@ -30,9 +30,9 @@
 #define TIMER_MILLIS(v)			(v * 1000UL)	/* ms -> us */
 #define TIMER_SECONDS(v)		(v * 1000000UL)	/* s -> us */
 
-typedef void (*timer_cb) (void *user_data);
+typedef void (*timer_cb) (void);
 
 int16_t timer_init(void);
 int16_t timer_create(uint8_t type, timer_cb cb);
-int16_t timer_start(int16_t id, uint32_t us, void *user_data);
+int16_t timer_start(int16_t id, uint32_t us);
 int16_t timer_stop(int16_t id);

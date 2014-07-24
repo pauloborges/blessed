@@ -197,7 +197,7 @@ static __inline int16_t inc_adv_ch_idx(void)
 
 /** Callback function for the "single shot" LL timer
  */
-static void t_ll_single_shot_cb(void *user_data)
+static void t_ll_single_shot_cb(void)
 {
 	switch(current_state) {
 		case LL_STATE_ADVERTISING:
@@ -210,7 +210,7 @@ static void t_ll_single_shot_cb(void *user_data)
 			prev_adv_ch_idx = adv_ch_idx;
 			if (!inc_adv_ch_idx())
 				timer_start(t_ll_single_shot,
-						t_adv_pdu_interval, NULL);
+							t_adv_pdu_interval);
 			break;
 
 		case LL_STATE_SCANNING:
@@ -230,12 +230,12 @@ static void t_ll_single_shot_cb(void *user_data)
 
 /** Callback function for the "interval" LL timer
  */
-static void t_ll_interval_cb(void *user_data)
+static void t_ll_interval_cb(void)
 {
 	switch(current_state) {
 		case LL_STATE_ADVERTISING:
 			adv_ch_idx = first_adv_ch_idx();
-			t_ll_single_shot_cb(NULL);
+			t_ll_single_shot_cb();
 			break;
 
 		case LL_STATE_SCANNING:
@@ -245,7 +245,7 @@ static void t_ll_interval_cb(void *user_data)
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
 			radio_recv(0);
-			timer_start(t_ll_single_shot, t_scan_window, NULL);
+			timer_start(t_ll_single_shot, t_scan_window);
 			break;
 
 		case LL_STATE_INITIATING:
@@ -302,13 +302,13 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
 
-	err_code = timer_start(t_ll_interval, interval, NULL);
+	err_code = timer_start(t_ll_interval, interval);
 	if (err_code < 0)
 		return err_code;
 
 	current_state = LL_STATE_ADVERTISING;
 
-	t_ll_interval_cb(NULL);
+	t_ll_interval_cb();
 
 	return 0;
 }
@@ -451,12 +451,12 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 
 	/* Setup timer and save window length */
 	t_scan_window = window;
-	err_code = timer_start(t_ll_interval, interval, NULL);
+	err_code = timer_start(t_ll_interval, interval);
 	if (err_code < 0)
 		return err_code;
 
 	current_state = LL_STATE_SCANNING;
-	t_ll_interval_cb(NULL);
+	t_ll_interval_cb();
 
 	DBG("interval %uus, window %uus", interval, window);
 
@@ -481,7 +481,7 @@ int16_t ll_scan_stop(void)
 		return err_code;
 
 	/* Call the single shot cb to stop the radio */
-	t_ll_single_shot_cb(NULL);
+	t_ll_single_shot_cb();
 
 	current_state = LL_STATE_STANDBY;
 

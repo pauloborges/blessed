@@ -114,25 +114,25 @@ static int16_t adv_event;
 static int16_t adv_interval;
 static int16_t t_ifs;
 
-void t_ifs_timeout(void *user_data)
+void t_ifs_timeout(void)
 {
 	radio_stop();
 }
 
-static void adv_interval_timeout(void *user_data)
+static void adv_interval_timeout(void)
 {
 	radio_stop();
 	radio_prepare(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 	radio_send(adv_scan_ind, RADIO_FLAGS_RX_NEXT);
 
 	if (idx < 3)
-		timer_start(adv_interval, ADV_INTERVAL, NULL);
+		timer_start(adv_interval, ADV_INTERVAL);
 }
 
-static void adv_event_timeout(void *user_data)
+static void adv_event_timeout(void)
 {
 	idx = 0;
-	adv_interval_timeout(NULL);
+	adv_interval_timeout();
 }
 
 static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
@@ -175,7 +175,7 @@ stop:
 
 static void radio_send_cb(bool active)
 {
-	timer_start(t_ifs, T_IFS, NULL);
+	timer_start(t_ifs, T_IFS);
 }
 
 int main(void)
@@ -193,8 +193,8 @@ int main(void)
 	DBG("Time between PDUs:   %u us", ADV_INTERVAL);
 	DBG("Time between events: %u us", ADV_EVENT);
 
-	timer_start(adv_event, ADV_EVENT, NULL);
-	adv_event_timeout(NULL);
+	timer_start(adv_event, ADV_EVENT);
+	adv_event_timeout();
 
 	while (1);
 

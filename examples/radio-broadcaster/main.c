@@ -70,19 +70,20 @@ static uint8_t idx;
 static int16_t adv_event;
 static int16_t adv_interval;
 
-static void adv_interval_timeout(void *user_data)
+
+static void adv_interval_timeout(void)
 {
 	radio_prepare(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
 	radio_send(adv_nonconn_ind, 0);
 
 	if (idx < 3)
-		timer_start(adv_interval, ADV_INTERVAL, NULL);
+		timer_start(adv_interval, ADV_INTERVAL);
 }
 
-static void adv_event_timeout(void *user_data)
+static void adv_event_timeout(void)
 {
 	idx = 0;
-	adv_interval_timeout(NULL);
+	adv_interval_timeout();
 }
 
 int main(void)
@@ -98,8 +99,8 @@ int main(void)
 	DBG("Time between PDUs:   %u ms", ADV_INTERVAL / 1000);
 	DBG("Time between events: %u ms", ADV_EVENT / 1000);
 
-	timer_start(adv_event, ADV_EVENT, NULL);
-	adv_event_timeout(NULL);
+	timer_start(adv_event, ADV_EVENT);
+	adv_event_timeout();
 
 	while (1);
 
