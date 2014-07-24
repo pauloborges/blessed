@@ -104,12 +104,6 @@ static int16_t t_ll_single_shot;
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
 
-/* Set up the radio to receive a new advertising packet */
-static __inline void scan_radio_recv(void)
-{
-	radio_recv(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-}
-
 static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
 {
 	struct ll_pdu_scan_req *scn;
@@ -126,10 +120,7 @@ static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
 		return;
 
 	/* Send SCAN_RSP */
-	radio_send(adv_chs[prev_adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
-					LL_CRCINIT_ADV,
-					(const uint8_t *) &pdu_scan_rsp,
-					pdu_scan_rsp.length, false);
+	radio_send((const uint8_t *) &pdu_scan_rsp, pdu_scan_rsp.length, false);
 }
 
 /**@brief Function called by the radio driver (PHY layer) on packet RX
@@ -158,7 +149,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc)
 			/* Receive new packets while the radio is not explicitly
 			 * stopped
 			 */
-			scan_radio_recv();
+			radio_recv();
 			break;
 
 		case LL_STATE_ADVERTISING:
@@ -219,9 +210,7 @@ static void t_ll_single_shot_cb(void *user_data)
 			radio_stop();
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			radio_send(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
-					LL_CRCINIT_ADV, (uint8_t *) &pdu_adv,
-							sizeof(pdu_adv), rx);
+			radio_send((uint8_t *) &pdu_adv, sizeof(pdu_adv), rx);
 
 			prev_adv_ch_idx = adv_ch_idx;
 			if (!inc_adv_ch_idx())
@@ -260,7 +249,7 @@ static void t_ll_interval_cb(void *user_data)
 
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			scan_radio_recv();
+			radio_recv();
 			timer_start(t_ll_single_shot, t_scan_window, NULL);
 			break;
 

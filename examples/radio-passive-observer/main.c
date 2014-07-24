@@ -81,7 +81,7 @@ static void scan_interval_timeout(void *user_data)
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
 
 	radio_prepare(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
-	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
+	radio_recv();
 }
 
 static void radio_rx(const uint8_t *pdu, bool crc)
@@ -106,7 +106,7 @@ static void radio_rx(const uint8_t *pdu, bool crc)
 	DBG("%s ch %u pdu %s", address, channels[idx], pdus[pdu_type]);
 
 next_recv:
-	radio_recv(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
+	radio_recv();
 }
 
 static struct radio_driver radio_driver = {

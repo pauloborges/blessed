@@ -108,9 +108,8 @@ static int16_t adv_interval;
 static void adv_interval_timeout(void *user_data)
 {
 	radio_stop();
-	radio_prepare(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
-	radio_send(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC,
-				adv_scan_ind, sizeof(adv_scan_ind), true);
+	radio_prepare(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
+	radio_send(adv_scan_ind, sizeof(adv_scan_ind), true);
 
 	if (idx < 3)
 		timer_start(adv_interval, ADV_INTERVAL, NULL);

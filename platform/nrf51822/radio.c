@@ -128,8 +128,7 @@ int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	return 0;
 }
 
-int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
-				const uint8_t *data, uint8_t len, bool rx)
+int16_t radio_send(const uint8_t *data, uint8_t len, bool rx)
 {
 	/* FIXME: len is not used. */
 
@@ -151,7 +150,7 @@ int16_t radio_send(uint8_t ch, uint32_t aa, uint32_t crcinit,
 	return 0;
 }
 
-int16_t radio_recv(uint8_t ch, uint32_t aa, uint32_t crcinit)
+int16_t radio_recv(void)
 {
 	NRF_RADIO->PACKETPTR = (uint32_t) buf;
 	NRF_RADIO->TASKS_RXEN = 1UL;
