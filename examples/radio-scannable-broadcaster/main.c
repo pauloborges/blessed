@@ -109,7 +109,7 @@ static void adv_interval_timeout(void *user_data)
 {
 	radio_stop();
 	radio_prepare(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
-	radio_send(adv_scan_ind, sizeof(adv_scan_ind), true);
+	radio_send(adv_scan_ind, true);
 
 	if (idx < 3)
 		timer_start(adv_interval, ADV_INTERVAL, NULL);
@@ -131,7 +131,7 @@ static void radio_rx(const uint8_t *pdu, bool crc)
 	/* Start replying as soon as possible, if there is something wrong,
 	 * cancel it.
 	 */
-	radio_send(scan_rsp, sizeof(scan_rsp), false);
+	radio_send(scan_rsp, false);
 
 	/* If the PDU isn't SCAN_REQ, ignore the packet */
 	if ((pdu[0] & 0xF) != PDU_TYPE_SCAN_REQ)

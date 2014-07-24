@@ -73,7 +73,7 @@ static int16_t adv_interval;
 static void adv_interval_timeout(void *user_data)
 {
 	radio_prepare(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
-	radio_send(adv_nonconn_ind, sizeof(adv_nonconn_ind), false);
+	radio_send(adv_nonconn_ind, false);
 
 	if (idx < 3)
 		timer_start(adv_interval, ADV_INTERVAL, NULL);

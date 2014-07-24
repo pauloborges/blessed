@@ -120,7 +120,7 @@ static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
 		return;
 
 	/* Send SCAN_RSP */
-	radio_send((const uint8_t *) &pdu_scan_rsp, pdu_scan_rsp.length, false);
+	radio_send((const uint8_t *) &pdu_scan_rsp, false);
 }
 
 /**@brief Function called by the radio driver (PHY layer) on packet RX
@@ -210,7 +210,7 @@ static void t_ll_single_shot_cb(void *user_data)
 			radio_stop();
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			radio_send((uint8_t *) &pdu_adv, sizeof(pdu_adv), rx);
+			radio_send((uint8_t *) &pdu_adv, rx);
 
 			prev_adv_ch_idx = adv_ch_idx;
 			if (!inc_adv_ch_idx())

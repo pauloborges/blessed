@@ -128,16 +128,8 @@ int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	return 0;
 }
 
-int16_t radio_send(const uint8_t *data, uint8_t len, bool rx)
+int16_t radio_send(const uint8_t *data, bool rx)
 {
-	/* FIXME: len is not used. */
-
-	if (len > RADIO_MAX_PDU)
-		return -EINVAL;
-
-	if (len < RADIO_MIN_PDU)
-		return -EINVAL;
-
 	status |= STATUS_TX;
 	rxshort = rx;
 
