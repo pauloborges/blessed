@@ -105,7 +105,7 @@ static int8_t idx;
 static int16_t adv_event;
 static int16_t adv_interval;
 
-void adv_interval_timeout(void *user_data)
+static void adv_interval_timeout(void *user_data)
 {
 	radio_stop();
 	radio_send(channels[idx++], ADV_CHANNEL_AA, ADV_CHANNEL_CRC,
@@ -115,7 +115,7 @@ void adv_interval_timeout(void *user_data)
 		timer_start(adv_interval, ADV_INTERVAL, NULL);
 }
 
-void adv_event_timeout(void *user_data)
+static void adv_event_timeout(void *user_data)
 {
 	idx = 0;
 	adv_interval_timeout(NULL);
