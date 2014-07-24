@@ -51,9 +51,10 @@
 		<< RADIO_SHORTS_END_DISABLE_Pos)
 
 static uint8_t buf[MAX_BUF_LEN] __attribute__ ((aligned));
-static volatile uint8_t status;
 static struct radio_driver *driver;
-static bool rxshort;
+
+static volatile uint8_t status;
+static volatile uint32_t flags;
 
 static __inline int8_t ch2freq(uint8_t ch)
 {
@@ -93,7 +94,8 @@ void RADIO_IRQHandler(void)
 		if (driver && driver->rx)
 			driver->rx(buf, NRF_RADIO->CRCSTATUS);
 	} else if (old_status & STATUS_TX) {
-		if (rxshort) {
+		if (flags & RADIO_FLAGS_RX_NEXT) {
+			flags &= ~RADIO_FLAGS_RX_NEXT;
 			status |= STATUS_RX;
 			NRF_RADIO->PACKETPTR = (uint32_t) buf;
 			NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
@@ -128,12 +130,12 @@ int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit)
 	return 0;
 }
 
-int16_t radio_send(const uint8_t *data, bool rx)
+int16_t radio_send(const uint8_t *data, uint32_t f)
 {
 	status |= STATUS_TX;
-	rxshort = rx;
+	flags |= f;
 
-	if (rx)
+	if (f & RADIO_FLAGS_RX_NEXT)
 		NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RXEN_Msk;
 
 	NRF_RADIO->PACKETPTR = (uint32_t) data;

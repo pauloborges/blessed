@@ -28,6 +28,8 @@
 #define RADIO_MAX_PDU			39
 #define RADIO_MIN_PDU			2
 
+#define RADIO_FLAGS_RX_NEXT		1
+
 typedef enum radio_power {
 	RADIO_POWER_4_DBM,
 	RADIO_POWER_0_DBM,
@@ -48,7 +50,7 @@ int16_t radio_init(struct radio_driver *driver);
 
 int16_t radio_prepare(uint8_t ch, uint32_t aa, uint32_t crcinit);
 int16_t radio_recv(void);
-int16_t radio_send(const uint8_t *data, bool rx);
+int16_t radio_send(const uint8_t *data, uint32_t flags);
 int16_t radio_stop(void);
 
 int16_t radio_set_tx_power(radio_power_t power);
