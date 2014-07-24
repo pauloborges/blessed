@@ -69,12 +69,12 @@ static __inline const char *format_address(const uint8_t *data)
 	return address;
 }
 
-void scan_window_timeout(void *user_data)
+static void scan_window_timeout(void *user_data)
 {
 	radio_stop();
 }
 
-void scan_interval_timeout(void *user_data)
+static void scan_interval_timeout(void *user_data)
 {
 	timer_start(scan_window, SCAN_WINDOW, NULL);
 
