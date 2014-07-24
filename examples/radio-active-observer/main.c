@@ -40,6 +40,7 @@
 #define ADV_SCAN_IND			6
 
 #define SCAN_WINDOW			TIMER_SECONDS(10)
+#define T_IFS				500
 
 /* Link Layer specification section 2.3, Core 4.1, page 2504
  * Link Layer specification section 2.3.1.3, Core 4.1, page 2507
@@ -64,15 +65,24 @@ static uint8_t channels[] = { 37, 38, 39 };
 static uint8_t idx = 0xFF;
 
 static int16_t scan_window;
+static int16_t t_ifs;
 
 static char *pdus[] = {
 	"ADV_IND", "ADV_DIRECT_IND", "ADV_NONCONN_IND", "SCAN_REQ",
 	"SCAN_RSP", "CONNECT_REQ", "ADV_SCAN_IND"
 };
 
+static void t_ifs_timeout(void *user_data)
+{
+	radio_stop();
+	radio_recv(RADIO_FLAGS_TX_NEXT);
+}
+
 static void scan_window_timeout(void *user_data)
 {
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
+
+	timer_stop(t_ifs);
 
 	radio_stop();
 	radio_prepare(channels[idx], ADV_CHANNEL_AA, ADV_CHANNEL_CRC);
@@ -83,6 +93,8 @@ static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	uint8_t pdu_type = pdu[0] & 0xF;
 	uint8_t length = pdu[1] & 0x3F;
+
+	timer_stop(t_ifs);
 
 	if (!crc) {
 		log_print("ch%u BAD CRC\r\n", channels[idx]);
@@ -124,6 +136,7 @@ next_recv:
 static void radio_send_cb(bool active)
 {
 	radio_recv(0);
+	timer_start(t_ifs, T_IFS, NULL);
 }
 
 int main(void)
@@ -135,6 +148,7 @@ int main(void)
 	radio_set_out_buffer(scan_req);
 
 	scan_window = timer_create(TIMER_REPEATED, scan_window_timeout);
+	t_ifs = timer_create(TIMER_SINGLESHOT, t_ifs_timeout);
 
 	DBG("Active scanning");
 	DBG("Scan window/interval: %u ms", SCAN_WINDOW / 1000);
