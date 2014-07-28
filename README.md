@@ -1,52 +1,52 @@
-# Project blessed
+# BLESSED
 
-**blessed** is a open source implementation of a Bluetooth Low Energy stack targeting embedded bare-metal devices.
+**Blessed** is an open source implementation of a Bluetooth Low Energy stack
+targeting embedded bare-metal devices. **Blessed** aims to provide a flexible
+and customizable software stack, and when necessary, allow access to lower
+layers, such as the link layer.
 
-## What "blessed" means?
-
-**blessed** in an acronym for Bluetooth Low Energy Software Stack for Embedded Devices.
-
-## Motivation
-
-In addition to software licensing, proprietary stacks always create a abstractions, and restricts the access to the platform internals. blessed aims to provide a flexible and customizable software stack, and when necessary, allowing access to low layers (Radio and Link Layer).
+It's also an acronym for Bluetooth Low Energy Software Stack for Embedded
+Devices.
 
 ## Features
 
-**blessed** currently supports GAP Broadcaster role. More features and roles are on the roadmap.
+* **GAP Broadcaster role**: non-connectable and scannable advertising are
+implemented. Connectable advertising is also implemented, but connection
+requests are ignored.
+* **GAP Observer role**: passive scanning is implemented.
 
-## Platforms
+### Planned features¹
 
-Currently, only nRF51822 platform is supported. Support for **Ubertooth One** and other platforms are on the roadmap.
+* Active scanning (check [`examples/radio-active-scanning`]
+(https://github.com/pauloborges/blessed/tree/devel/examples/radio-active-observer)).
+* Link layer device filtering.
+* GAP Peripheral role (connection).
+* High level API to easily create apps (unfinished draft can be found in
+[`include/blessed/bci.h`]
+(https://github.com/pauloborges/blessed/blob/devel/include/blessed/bci.h)).
 
-Check `platform/nrf51822/README.md` for specific instructions for the nRF51822 port.
+¹ This is not a complete list.
 
-## Building
+## Supported platforms
 
-To build blessed, just:
+Currently, only the [`nRF51822`]
+(https://github.com/pauloborges/blessed/tree/devel/platform/nrf51822) SoC from
+[Nordic Semiconductors](https://www.nordicsemi.com/) is supported.
 
-    $ make PLATFORM=my-platform
+## How to compile it
 
-This will generate a static library `libblessed.a` in the `build` directory. The public headers are located in `include/blessed`.
+Execute:
 
-If you always build to the same platform, you can:
+    $ make PLATFORM=your-platform <other configuration variables²>
 
-    $ echo "PLATFORM=my-platform" > Makefile.config
-    $ make
+If all's well, this command will generate a static library located in
+`build/libblessed.a`. The public headers are located in `include/blessed`.
+Check the examples to see how to build and link an application with
+`libblessed.a`. Our build system doesn't support `make install`.
 
-The `Makefile.config` file is included by `Makefile`.
+² More on this soon.
 
-### Configuration
+## Examples
 
-You can configure your build by passing configuration variables in the make command:
-
-    $ make MY-CONFIG=my-config-value
-
-The configuration variables are:
-
-* `CONFIG_LOG_ENABLE`: enable/disable log and error messages
-    * `=1` enable (default value)
-    * `=0` disable
-
-## Example
-
-There are several examples in `examples` directory showing how to use blessed. Check `examples/README.md` to learn how to build and install them.
+Check the [`examples/README.md`]
+(https://github.com/pauloborges/blessed/blob/devel/examples/README.md) file.
