@@ -104,7 +104,7 @@ static int16_t t_ll_single_shot;
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
 
-static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
+static __inline void send_scan_rsp(const struct ll_pdu_adv *pdu)
 {
 	struct ll_pdu_scan_req *scn;
 
@@ -168,7 +168,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 			if (rcvd_pdu->type != LL_PDU_SCAN_REQ)
 				break;
 
-			scan_req_cb(rcvd_pdu);
+			send_scan_rsp(rcvd_pdu);
 
 			break;
 
