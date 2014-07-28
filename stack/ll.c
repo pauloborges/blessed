@@ -108,19 +108,27 @@ static __inline void scan_req_cb(const struct ll_pdu_adv *pdu)
 {
 	struct ll_pdu_scan_req *scn;
 
+	/* Start replying as soon as possible, if there is something wrong,
+	 * cancel it.
+	 */
+	radio_send((const uint8_t *) &pdu_scan_rsp, 0);
+
 	/* SCAN_REQ payload: ScanA(6 octets)|AdvA(6 octects) */
 	if (pdu->length != 12)
-		return;
+		goto stop;
 
 	if (pdu->rx_add != laddr->type)
-		return;
+		goto stop;
 
 	scn = (struct ll_pdu_scan_req *) pdu->payload;
-	if (memcmp(scn->adva, laddr->addr, 6))
-		return;
 
-	/* Send SCAN_RSP */
-	radio_send((const uint8_t *) &pdu_scan_rsp, 0);
+	if (memcmp(scn->adva, laddr->addr, 6))
+		goto stop;
+
+	return;
+
+stop:
+	radio_stop();
 }
 
 /**@brief Function called by the radio driver (PHY layer) on packet RX
