@@ -43,6 +43,14 @@
 /* Link Layer specification Section 3.1.1, Core 4.1 page 2522 */
 #define LL_CRCINIT_ADV			0x555555
 
+/* The time between packets is 150 us. But we are only notified when a
+ * transmission or reception is completed. So we need to consider the time to
+ * receive the packet. Empirically, a SCAN_REQ roughly took 100 us to be totally
+ * received, which gives us a total timeout of 250 us. But we will consider a
+ * bigger window to guarantee the reception.
+ */
+#define T_IFS				500
+
 /* Link Layer specification Section 1.1, Core 4.1 page 2499 */
 typedef enum ll_states {
 	LL_STATE_STANDBY,
@@ -92,14 +100,18 @@ static struct ll_pdu_adv pdu_scan_rsp;
 static bool rx = false;
 
 /** Timers used by the LL
- * Two timers are shared for the various states : one for triggering
+ * Three timers are shared for the various states : one for triggering
  * events at periodic intervals (advertising start / scanning start)
  *
  * The second is used as single shot : change advertising channel or stop
  * scanning at the end of the window
+ *
+ * The third one is used to timeout when the link layer sends a packet and
+ * waits the reply after an inter frame space.
  */
 static int16_t t_ll_interval;
 static int16_t t_ll_single_shot;
+static int16_t t_ll_ifs;
 
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
@@ -168,6 +180,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 			if (rcvd_pdu->type != LL_PDU_SCAN_REQ)
 				break;
 
+			timer_stop(t_ll_ifs);
 			send_scan_rsp(rcvd_pdu);
 
 			break;
@@ -179,6 +192,11 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 			/* Nothing to do */
 			return;
 	}
+}
+
+static void ll_on_radio_tx(bool active)
+{
+	timer_start(t_ll_ifs, T_IFS);
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -266,6 +284,11 @@ static void t_ll_interval_cb(void)
 	}
 }
 
+static void t_ll_ifs_cb(void)
+{
+	radio_stop();
+}
+
 int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 {
 	int16_t err_code;
@@ -305,7 +328,8 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	pdu_adv.type = type;
 	t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 
-	radio_set_callbacks(rx ? ll_on_radio_rx : NULL, NULL);
+	radio_set_callbacks(rx ? ll_on_radio_rx : NULL,
+						rx ? ll_on_radio_tx : NULL);
 
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
@@ -327,6 +351,8 @@ int16_t ll_advertise_stop()
 
 	if (current_state != LL_STATE_ADVERTISING)
 		return -ENOREADY;
+
+	timer_stop(t_ll_ifs);
 
 	err_code = timer_stop(t_ll_interval);
 	if (err_code < 0)
@@ -412,6 +438,10 @@ int16_t ll_init(const bdaddr_t *addr)
 	t_ll_single_shot = timer_create(TIMER_SINGLESHOT, t_ll_single_shot_cb);
 	if (t_ll_single_shot < 0)
 		return t_ll_single_shot;
+
+	t_ll_ifs = timer_create(TIMER_SINGLESHOT, t_ll_ifs_cb);
+	if (t_ll_ifs < 0)
+		return t_ll_ifs;
 
 	laddr = addr;
 	current_state = LL_STATE_STANDBY;
