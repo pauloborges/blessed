@@ -44,6 +44,14 @@
 #define CONFIG_LOG_BUFFER_LEN		128
 #endif
 
+#ifndef CONFIG_LOG_BAUD_RATE
+#define CONFIG_LOG_BAUD_RATE		1M
+#endif
+
+#define BAUD_RATE			_BAUD_RATE(CONFIG_LOG_BAUD_RATE)
+#define _BAUD_RATE(baud)		__BAUD_RATE(baud)
+#define __BAUD_RATE(baud)		UART_BAUDRATE_BAUDRATE_Baud##baud
+
 #define UNINITIALIZED			0
 #define READY				1
 #define BUSY				2
@@ -106,7 +114,7 @@ int16_t log_init(void)
 		CTS_PIN_NUMBER,
 		APP_UART_FLOW_CONTROL_ENABLED,
 		false,
-		UART_BAUDRATE_BAUDRATE_Baud1M
+		BAUD_RATE
 	};
 
 	if (state != UNINITIALIZED)
