@@ -29,11 +29,28 @@
 #endif
 
 #if CONFIG_LOG_ENABLE
+
 int16_t log_init(void);
+
+int16_t log_int(int32_t n);
+int16_t log_uint(uint32_t n);
+
+int16_t log_char(char c);
+int16_t log_string(const char *str);
+
+int16_t log_newline(void);
 int16_t log_print(const char *format, ...);
+
 #else
-inline int16_t log_init(void) { return 0; };
-inline int16_t log_print(const char *format, ...) { return 0; };
+
+inline int16_t log_init(void)					{ return 0; };
+inline int16_t log_int(int32_t n)				{ return 0; };
+inline int16_t log_uint(uint32_t n)				{ return 0; };
+inline int16_t log_char(char c)					{ return 0; };
+inline int16_t log_string(const char *str)			{ return 0; };
+inline int16_t log_newline(void)				{ return 0; };
+inline int16_t log_print(const char *format, ...)		{ return 0; };
+
 #endif
 
 #define __ONLYFILE__							\

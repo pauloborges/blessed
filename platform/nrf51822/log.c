@@ -72,6 +72,9 @@ static uint8_t buffer[BUFFER_LEN] __attribute__ ((aligned));
 
 static volatile uint8_t state = UNINITIALIZED;
 
+static char itosbuf[12];
+static char *itoc = "9876543210123456789";
+
 static __inline void tx_next_byte(void)
 {
 	if (BUFFER_USED_SPACE() == 0) {
@@ -91,24 +94,136 @@ static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
 	tx_next_byte();
 }
 
-static __inline int16_t write_to_buf(const char *tmp)
+static inline const char *itos(int32_t n)
 {
-	int16_t len = strlen(tmp);
+	char *p1 = itosbuf;
+	char *p2 = itosbuf;
+	int32_t prev;
+	char c;
+
+	do {
+		prev = n;
+		n /= 10;
+		*p1++ = itoc[9 + prev - n * 10];
+	} while (n);
+
+	if (prev < 0)
+		*p1++ = '-';
+
+	*p1-- = '\0';
+
+	while(p2 < p1) {
+		c = *p1;
+		*p1--= *p2;
+		*p2++ = c;
+	}
+
+	return itosbuf;
+}
+
+static inline const char *utos(uint32_t n)
+{
+	char *p1 = itosbuf;
+	char *p2 = itosbuf;
+	uint32_t prev;
+	char c;
+
+	do {
+		prev = n;
+		n /= 10U;
+		*p1++ = itoc[9 + prev - n * 10];
+	} while (n);
+
+	*p1-- = '\0';
+
+	while(p2 < p1) {
+		c = *p1;
+		*p1--= *p2;
+		*p2++ = c;
+	}
+
+	return itosbuf;
+}
+
+int16_t log_int(int32_t n)
+{
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
+
+	log_string(itos(n));
+
+	return 0;
+}
+
+int16_t log_uint(uint32_t n)
+{
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
+
+	log_string(utos(n));
+
+	return 0;
+}
+
+int16_t log_char(char c)
+{
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
+
+	if (BUFFER_EMPTY_SPACE() == 0)
+		return -ENOMEM;
+
+	buffer[WP] = (uint8_t) c;
+
+	wp++;
+
+	return 0;
+}
+
+int16_t log_string(const char *str)
+{
+	int16_t len;
+
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
+
+	len = strlen(str);
 
 	if (BUFFER_EMPTY_SPACE() < len)
 		return -ENOMEM;
 
 	if (WP + len < BUFFER_LEN)
-		memcpy(buffer + WP, tmp, len);
+		memcpy(buffer + WP, str, len);
 	else {
 		uint16_t slice1 = BUFFER_LEN - WP;
 		uint16_t slice2 = len - slice1;
 
-		memcpy(buffer + WP, tmp, slice1);
-		memcpy(buffer, tmp + slice1, slice2);
+		memcpy(buffer + WP, str, slice1);
+		memcpy(buffer, str + slice1, slice2);
 	}
 
 	wp += len;
+
+	if (state == READY) {
+		state = BUSY;
+		tx_next_byte();
+	}
+
+	return 0;
+}
+
+int16_t log_newline(void)
+{
+	if (state == UNINITIALIZED)
+		return -ENOREADY;
+
+	if (BUFFER_EMPTY_SPACE() < 2)
+		return -ENOMEM;
+
+	buffer[WP] = (uint8_t) '\r';
+	wp++;
+	buffer[WP] = (uint8_t) '\n';
+	wp++;
 
 	return 0;
 }
@@ -118,26 +233,12 @@ int16_t log_print(const char *format, ...)
 	uint32_t len = BUFFER_EMPTY_SPACE();
 	char tmp[len];
 	va_list args;
-	int16_t err;
-
-	if (state == UNINITIALIZED)
-		return -ENOREADY;
 
 	va_start(args, format);
 	vsnprintf(tmp, len, format, args);
 	va_end(args);
 
-	err = write_to_buf(tmp);
-
-	if (err < 0)
-		return err;
-
-	if (state == READY) {
-		state = BUSY;
-		tx_next_byte();
-	}
-
-	return 0;
+	return log_string(tmp);
 }
 
 int16_t log_init(void)
@@ -166,7 +267,7 @@ int16_t log_init(void)
 
 	/* Necessary to fully initialize the UART */
 	nrf_delay_ms(1);
-	log_print("\r\n");
+	log_newline();
 
 	return 0;
 }
