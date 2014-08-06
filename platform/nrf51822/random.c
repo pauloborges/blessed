@@ -25,10 +25,6 @@
 #include <nrf51.h>
 #include <nrf51_bitfields.h>
 
-#include <blessed/errcodes.h>
-
-#include "nrf51822.h"
-
 int16_t random_init(void)
 {
 	/* nRF51 Series Reference Manual v2.1, section 20.2, page 118
