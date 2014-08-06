@@ -52,23 +52,35 @@
 #define _BAUD_RATE(baud)		__BAUD_RATE(baud)
 #define __BAUD_RATE(baud)		UART_BAUDRATE_BAUDRATE_Baud##baud
 
+#define BUFFER_LEN			CONFIG_LOG_BUFFER_LEN
+#define BUFFER_MASK			(BUFFER_LEN - 1)
+#define BUFFER_EMPTY_SPACE()		(BUFFER_LEN + rp - wp)
+#define BUFFER_USED_SPACE()		(wp - rp)
+#define WP				(wp & BUFFER_MASK)
+#define RP				(rp & BUFFER_MASK)
+
 #define UNINITIALIZED			0
 #define READY				1
 #define BUSY				2
 
-static volatile uint16_t pos;
-static volatile uint16_t len;
-static volatile uint8_t buffer[CONFIG_LOG_BUFFER_LEN] __attribute__ ((aligned));
+/* Check if BUFFER_LEN is power of 2 */
+STATIC_ASSERT(BUFFER_LEN && !(BUFFER_LEN & (BUFFER_LEN - 1)));
+
+static volatile uint32_t wp = 0;
+static volatile uint32_t rp = 0;
+static uint8_t buffer[BUFFER_LEN] __attribute__ ((aligned));
+
 static volatile uint8_t state = UNINITIALIZED;
 
 static __inline void tx_next_byte(void)
 {
-	if (pos == len) {
+	if (BUFFER_USED_SPACE() == 0) {
 		state = READY;
 		return;
 	}
 
-	app_uart_put(buffer[pos++]);
+	app_uart_put(buffer[RP]);
+	rp++;
 }
 
 static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
@@ -79,24 +91,51 @@ static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
 	tx_next_byte();
 }
 
+static __inline int16_t write_to_buf(const char *tmp)
+{
+	int16_t len = strlen(tmp);
+
+	if (BUFFER_EMPTY_SPACE() < len)
+		return -ENOMEM;
+
+	if (WP + len < BUFFER_LEN)
+		memcpy(buffer + WP, tmp, len);
+	else {
+		uint16_t slice1 = BUFFER_LEN - WP;
+		uint16_t slice2 = len - slice1;
+
+		memcpy(buffer + WP, tmp, slice1);
+		memcpy(buffer, tmp + slice1, slice2);
+	}
+
+	wp += len;
+
+	return 0;
+}
 
 int16_t log_print(const char *format, ...)
 {
+	uint32_t len = BUFFER_EMPTY_SPACE();
+	char tmp[len];
 	va_list args;
+	int16_t err;
 
 	if (state == UNINITIALIZED)
 		return -ENOREADY;
 
-	while (state == BUSY);
-
 	va_start(args, format);
-	len = vsnprintf((char *) buffer, CONFIG_LOG_BUFFER_LEN, format, args);
+	vsnprintf(tmp, len, format, args);
 	va_end(args);
 
-	pos = 0;
-	state = BUSY;
+	err = write_to_buf(tmp);
 
-	tx_next_byte();
+	if (err < 0)
+		return err;
+
+	if (state == READY) {
+		state = BUSY;
+		tx_next_byte();
+	}
 
 	return 0;
 }
