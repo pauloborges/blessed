@@ -39,6 +39,8 @@
 
 #include "nrf51822.h"
 
+#if CONFIG_LOG_ENABLE
+
 #ifndef CONFIG_LOG_BUFFER_LEN
 #define CONFIG_LOG_BUFFER_LEN		128
 #endif
@@ -47,7 +49,6 @@
 #define READY				1
 #define BUSY				2
 
-#if CONFIG_LOG_ENABLE
 static volatile uint16_t pos;
 static volatile uint16_t len;
 static volatile uint8_t buffer[CONFIG_LOG_BUFFER_LEN] __attribute__ ((aligned));
@@ -70,11 +71,10 @@ static void uart_evt_handler(app_uart_evt_t *p_app_uart_evt)
 
 	tx_next_byte();
 }
-#endif
+
 
 int16_t log_print(const char *format, ...)
 {
-#if CONFIG_LOG_ENABLE
 	va_list args;
 
 	if (state == UNINITIALIZED)
@@ -90,14 +90,12 @@ int16_t log_print(const char *format, ...)
 	state = BUSY;
 
 	tx_next_byte();
-#endif
 
 	return 0;
 }
 
 int16_t log_init(void)
 {
-#if CONFIG_LOG_ENABLE
 	uint32_t err_code;
 
 	UNUSED(err_code);
@@ -123,7 +121,8 @@ int16_t log_init(void)
 	/* Necessary to fully initialize the UART */
 	nrf_delay_ms(1);
 	log_print("\r\n");
-#endif
 
 	return 0;
 }
+
+#endif

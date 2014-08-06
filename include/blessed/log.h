@@ -28,8 +28,13 @@
 #define CONFIG_LOG_ENABLE		1
 #endif
 
+#if CONFIG_LOG_ENABLE
 int16_t log_init(void);
 int16_t log_print(const char *format, ...);
+#else
+inline int16_t log_init(void) { return 0; };
+inline int16_t log_print(const char *format, ...) { return 0; };
+#endif
 
 #define __ONLYFILE__							\
 	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
