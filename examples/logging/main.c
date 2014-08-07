@@ -44,5 +44,11 @@ int main(void)
 	for (i = 0; i < LOOP; i++)
 		DBG("[%d/%d] May the Force be with you", i+1, LOOP);
 
+	log_string("Without formatted output: ");
+	log_int(-12345);
+	log_char(' ');
+	log_uint(12345);
+	log_newline();
+
 	return 0;
 }
