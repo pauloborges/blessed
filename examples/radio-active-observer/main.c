@@ -97,19 +97,19 @@ static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 	timer_stop(t_ifs);
 
 	if (!crc) {
-		log_print("ch%u BAD CRC\r\n", channels[idx]);
+		log_printf("ch%u BAD CRC\r\n", channels[idx]);
 
 		goto next_recv;
 	}
 
 	/* The minimum allowed payload is 6 bytes */
 	if (length < 6) {
-		log_print("ch%u BAD LENGTH %u\r\n", channels[idx], length);
+		log_printf("ch%u BAD LENGTH %u\r\n", channels[idx], length);
 
 		goto next_recv;
 	}
 
-	log_print("ch%u %s\r\n", channels[idx], pdus[pdu_type]);
+	log_printf("ch%u %s\r\n", channels[idx], pdus[pdu_type]);
 
 	if (pdu_type == ADV_IND || pdu_type == ADV_SCAN_IND) {
 		/* Copy pdu's AdvA to scan_req's AdvA */

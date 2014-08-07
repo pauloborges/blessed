@@ -228,7 +228,7 @@ int16_t log_newline(void)
 	return 0;
 }
 
-int16_t log_print(const char *format, ...)
+int16_t log_printf(const char *format, ...)
 {
 	uint32_t len = BUFFER_EMPTY_SPACE();
 	char tmp[len];

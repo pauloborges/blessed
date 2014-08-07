@@ -39,7 +39,7 @@ int16_t log_char(char c);
 int16_t log_string(const char *str);
 
 int16_t log_newline(void);
-int16_t log_print(const char *format, ...);
+int16_t log_printf(const char *format, ...);
 
 #else
 
@@ -49,7 +49,7 @@ inline int16_t log_uint(uint32_t n)				{ return 0; };
 inline int16_t log_char(char c)					{ return 0; };
 inline int16_t log_string(const char *str)			{ return 0; };
 inline int16_t log_newline(void)				{ return 0; };
-inline int16_t log_print(const char *format, ...)		{ return 0; };
+inline int16_t log_printf(const char *format, ...)		{ return 0; };
 
 #endif
 
@@ -57,7 +57,7 @@ inline int16_t log_print(const char *format, ...)		{ return 0; };
 	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define LOG(level, fmt, arg...)						\
-		log_print(level ":%s:%s() " fmt "\r\n",			\
+		log_printf(level ":%s:%s() " fmt "\r\n",		\
 					__ONLYFILE__, __func__, ## arg)
 
 #define DBG(fmt, arg...)		LOG("DEBUG", fmt, ## arg)
