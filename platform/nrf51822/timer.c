@@ -45,7 +45,7 @@
 
 struct timer {
 	uint32_t ticks;
-	timer_cb cb;
+	timer_cb_t cb;
 	uint8_t enabled:1;
 	uint8_t active:1;
 	uint8_t type:1;
@@ -126,7 +126,7 @@ int16_t timer_init(void)
 	return 0;
 }
 
-int16_t timer_create(uint8_t type, timer_cb cb)
+int16_t timer_create(uint8_t type, timer_cb_t cb)
 {
 	int16_t id;
 
