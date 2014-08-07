@@ -159,7 +159,7 @@ int16_t log_init(void)
 	if (state != UNINITIALIZED)
 		return -EALREADY;
 
-	APP_UART_INIT(&params, uart_evt_handler, IRQ_PRIORITY_HIGHEST,
+	APP_UART_INIT(&params, uart_evt_handler, IRQ_PRIORITY_MEDIUM,
 								err_code);
 
 	state = READY;
