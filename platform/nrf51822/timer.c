@@ -38,7 +38,7 @@
 
 #define HFCLK				16000000UL
 #define TIMER_PRESCALER			4		/* 1 MHz */
-#define MAX_TIMERS			4
+#define MAX_TIMERS			3
 
 /* The implementation of repeated timers inserts a constant drift in every
  * repetition because of the interruption context switch until initialize
@@ -224,4 +224,22 @@ int16_t timer_stop(int16_t id)
 	}
 
 	return 0;
+}
+
+uint32_t timer_get_remaining_us(int16_t id)
+{
+	uint32_t ticks = 0;
+	uint32_t curr = get_curr_ticks();
+
+	if (!timers[id].active)
+		return 0;
+
+	if (NRF_TIMER0->CC[id] > curr)
+		ticks = NRF_TIMER0->CC[id]-curr;
+	else
+		ticks = (0xFFFFFF-curr) + NRF_TIMER0->CC[id];
+
+	return ROUNDED_DIV((uint64_t)ticks * TIMER_SECONDS(1) *
+					ROUNDED_DIV(2 << TIMER_PRESCALER, 2),
+									HFCLK);
 }
