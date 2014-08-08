@@ -40,6 +40,12 @@
 #define TIMER_PRESCALER			4		/* 1 MHz */
 #define MAX_TIMERS			4
 
+/* The implementation of repeated timers inserts a constant drift in every
+ * repetition because of the interruption context switch until initialize
+ * TIMER0_IRQHandler(). The define below calculates the number of ticks until
+ * the exception handler is executed. */
+#define DRIFT_FIX			(1UL << (5 - TIMER_PRESCALER))
+
 #define ROUNDED_DIV(A, B)		(((A) + ((B) / 2)) / (B))
 #define BIT(n)				(1 << n)
 
@@ -60,22 +66,33 @@ static __inline void get_clr_set_masks(uint8_t id, uint32_t *clr, uint32_t *set)
 	*set = TIMER_INTENSET_COMPARE0_Msk << id;
 }
 
-static __inline void update_cc(uint8_t id, uint64_t ticks)
+static __inline uint32_t get_curr_ticks(void)
+{
+	uint32_t ticks;
+	uint32_t cc3;
+
+	cc3 = NRF_TIMER0->CC[3];
+	NRF_TIMER0->TASKS_CAPTURE[3] = 1UL;
+	ticks = NRF_TIMER0->CC[3];
+	NRF_TIMER0->CC[3] = cc3;
+
+	return ticks;
+}
+
+static __inline void update_cc(uint8_t id, uint32_t ticks)
 {
 	uint32_t clr_mask = 0;
 	uint32_t set_mask = 0;
 
 	get_clr_set_masks(id, &clr_mask, &set_mask);
 
-	NRF_TIMER0->INTENCLR = clr_mask;
-	NRF_TIMER0->TASKS_CAPTURE[id] = 1UL;
-	NRF_TIMER0->CC[id] = ((uint64_t)NRF_TIMER0->CC[id] + ticks)
-								% 0xFFFFFFFF;
+	NRF_TIMER0->CC[id] = ticks;
 	NRF_TIMER0->INTENSET = set_mask;
 }
 
 void TIMER0_IRQHandler(void)
 {
+	uint32_t curr = get_curr_ticks();
 	uint8_t id_mask = 0;
 	uint8_t id;
 
@@ -91,7 +108,8 @@ void TIMER0_IRQHandler(void)
 	for (id = 0; id < MAX_TIMERS; id++) {
 		if (id_mask & BIT(id)) {
 			if (timers[id].type == TIMER_REPEATED) {
-				update_cc(id, (uint64_t) timers[id].ticks);
+				update_cc(id, curr + timers[id].ticks
+								- DRIFT_FIX);
 			} else if (timers[id].type == TIMER_SINGLESHOT) {
 				timers[id].active = 0;
 			}
@@ -150,6 +168,7 @@ create:
 
 int16_t timer_start(int16_t id, uint32_t us, timer_cb_t cb)
 {
+	uint32_t curr = get_curr_ticks();
 	uint32_t ticks;
 
 	if (id < 0)
@@ -164,7 +183,7 @@ int16_t timer_start(int16_t id, uint32_t us, timer_cb_t cb)
 	ticks = ROUNDED_DIV((uint64_t)us * HFCLK, TIMER_SECONDS(1)
 					* ROUNDED_DIV(2 << TIMER_PRESCALER, 2));
 
-	update_cc(id, (uint64_t) ticks);
+	update_cc(id, curr + ticks);
 
 	timers[id].active = 1;
 	timers[id].ticks = ticks;
