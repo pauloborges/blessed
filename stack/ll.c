@@ -113,6 +113,11 @@ static int16_t t_ll_interval;
 static int16_t t_ll_single_shot;
 static int16_t t_ll_ifs;
 
+static void t_ll_ifs_cb(void)
+{
+	radio_stop();
+}
+
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
 
@@ -196,7 +201,7 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 
 static void ll_on_radio_tx(bool active)
 {
-	timer_start(t_ll_ifs, T_IFS);
+	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -236,7 +241,8 @@ static void t_ll_single_shot_cb(void)
 			prev_adv_ch_idx = adv_ch_idx;
 			if (!inc_adv_ch_idx())
 				timer_start(t_ll_single_shot,
-							t_adv_pdu_interval);
+							t_adv_pdu_interval,
+							t_ll_single_shot_cb);
 			break;
 
 		case LL_STATE_SCANNING:
@@ -271,7 +277,8 @@ static void t_ll_interval_cb(void)
 			radio_prepare(adv_chs[adv_ch_idx],
 					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
 			radio_recv(0);
-			timer_start(t_ll_single_shot, t_scan_window);
+			timer_start(t_ll_single_shot, t_scan_window,
+							t_ll_single_shot_cb);
 			break;
 
 		case LL_STATE_INITIATING:
@@ -282,11 +289,6 @@ static void t_ll_interval_cb(void)
 			/* Nothing to do */
 			return;
 	}
-}
-
-static void t_ll_ifs_cb(void)
-{
-	radio_stop();
 }
 
 int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
@@ -334,7 +336,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
 
-	err_code = timer_start(t_ll_interval, interval);
+	err_code = timer_start(t_ll_interval, interval, t_ll_interval_cb);
 	if (err_code < 0)
 		return err_code;
 
@@ -431,15 +433,15 @@ int16_t ll_init(const bdaddr_t *addr)
 	if (err_code < 0)
 		return err_code;
 
-	t_ll_interval = timer_create(TIMER_REPEATED, t_ll_interval_cb);
+	t_ll_interval = timer_create(TIMER_REPEATED);
 	if (t_ll_interval < 0)
 		return t_ll_interval;
 
-	t_ll_single_shot = timer_create(TIMER_SINGLESHOT, t_ll_single_shot_cb);
+	t_ll_single_shot = timer_create(TIMER_SINGLESHOT);
 	if (t_ll_single_shot < 0)
 		return t_ll_single_shot;
 
-	t_ll_ifs = timer_create(TIMER_SINGLESHOT, t_ll_ifs_cb);
+	t_ll_ifs = timer_create(TIMER_SINGLESHOT);
 	if (t_ll_ifs < 0)
 		return t_ll_ifs;
 
@@ -489,7 +491,7 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 
 	/* Setup timer and save window length */
 	t_scan_window = window;
-	err_code = timer_start(t_ll_interval, interval);
+	err_code = timer_start(t_ll_interval, interval, t_ll_interval_cb);
 	if (err_code < 0)
 		return err_code;
 

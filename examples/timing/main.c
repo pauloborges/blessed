@@ -58,11 +58,11 @@ int main(void)
 	log_init();
 	timer_init();
 
-	timer1 = timer_create(TIMER_REPEATED, timeout1);
-	timer2 = timer_create(TIMER_SINGLESHOT, timeout2);
+	timer1 = timer_create(TIMER_REPEATED);
+	timer2 = timer_create(TIMER_SINGLESHOT);
 
-	timer_start(timer1, TIMER1);
-	timer_start(timer2, TIMER2);
+	timer_start(timer1, TIMER1, timeout1);
+	timer_start(timer2, TIMER2, timeout2);
 
 	while (1);
 

@@ -126,7 +126,7 @@ static void adv_interval_timeout(void)
 	radio_send(adv_scan_ind, RADIO_FLAGS_RX_NEXT);
 
 	if (idx < 3)
-		timer_start(adv_interval, ADV_INTERVAL);
+		timer_start(adv_interval, ADV_INTERVAL, adv_interval_timeout);
 }
 
 static void adv_event_timeout(void)
@@ -175,7 +175,7 @@ stop:
 
 static void radio_send_cb(bool active)
 {
-	timer_start(t_ifs, T_IFS);
+	timer_start(t_ifs, T_IFS, t_ifs_timeout);
 }
 
 int main(void)
@@ -185,15 +185,15 @@ int main(void)
 	radio_init();
 	radio_set_callbacks(radio_recv_cb, radio_send_cb);
 
-	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
-	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
-	t_ifs = timer_create(TIMER_SINGLESHOT, t_ifs_timeout);
+	adv_interval = timer_create(TIMER_SINGLESHOT);
+	adv_event = timer_create(TIMER_REPEATED);
+	t_ifs = timer_create(TIMER_SINGLESHOT);
 
 	DBG("Advertising ADV_SCAN_IND PDUs");
 	DBG("Time between PDUs:   %u us", ADV_INTERVAL);
 	DBG("Time between events: %u us", ADV_EVENT);
 
-	timer_start(adv_event, ADV_EVENT);
+	timer_start(adv_event, ADV_EVENT, adv_event_timeout);
 	adv_event_timeout();
 
 	while (1);

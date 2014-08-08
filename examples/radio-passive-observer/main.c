@@ -76,7 +76,7 @@ static void scan_window_timeout(void)
 
 static void scan_interval_timeout(void)
 {
-	timer_start(scan_window, SCAN_WINDOW);
+	timer_start(scan_window, SCAN_WINDOW, scan_window_timeout);
 
 	idx = (uint8_t) (idx + 1) % sizeof(channels);
 
@@ -116,14 +116,14 @@ int main(void)
 	radio_init();
 	radio_set_callbacks(radio_recv_cb, NULL);
 
-	scan_window = timer_create(TIMER_SINGLESHOT, scan_window_timeout);
-	scan_interval = timer_create(TIMER_REPEATED, scan_interval_timeout);
+	scan_window = timer_create(TIMER_SINGLESHOT);
+	scan_interval = timer_create(TIMER_REPEATED);
 
 	DBG("Scanning");
 	DBG("Scan window:   %u ms", SCAN_WINDOW / 1000);
 	DBG("Scan interval: %u ms", SCAN_INTERVAL / 1000);
 
-	timer_start(scan_interval, SCAN_INTERVAL);
+	timer_start(scan_interval, SCAN_INTERVAL, scan_interval_timeout);
 	scan_interval_timeout();
 
 	while (1);

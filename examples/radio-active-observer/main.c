@@ -136,7 +136,7 @@ next_recv:
 static void radio_send_cb(bool active)
 {
 	radio_recv(0);
-	timer_start(t_ifs, T_IFS);
+	timer_start(t_ifs, T_IFS, t_ifs_timeout);
 }
 
 int main(void)
@@ -147,13 +147,13 @@ int main(void)
 	radio_set_callbacks(radio_recv_cb, radio_send_cb);
 	radio_set_out_buffer(scan_req);
 
-	scan_window = timer_create(TIMER_REPEATED, scan_window_timeout);
-	t_ifs = timer_create(TIMER_SINGLESHOT, t_ifs_timeout);
+	scan_window = timer_create(TIMER_REPEATED);
+	t_ifs = timer_create(TIMER_SINGLESHOT);
 
 	DBG("Active scanning");
 	DBG("Scan window/interval: %u ms", SCAN_WINDOW / 1000);
 
-	timer_start(scan_window, SCAN_WINDOW);
+	timer_start(scan_window, SCAN_WINDOW, scan_window_timeout);
 	scan_window_timeout();
 
 	while (1);

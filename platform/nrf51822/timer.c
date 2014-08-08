@@ -126,12 +126,9 @@ int16_t timer_init(void)
 	return 0;
 }
 
-int16_t timer_create(uint8_t type, timer_cb_t cb)
+int16_t timer_create(uint8_t type)
 {
 	int16_t id;
-
-	if (cb == NULL)
-		return -EINVAL;
 
 	if (type != TIMER_SINGLESHOT && type != TIMER_REPEATED)
 		return -EINVAL;
@@ -147,12 +144,11 @@ create:
 	timers[id].enabled = 1;
 	timers[id].active = 0;
 	timers[id].type = type;
-	timers[id].cb = cb;
 
 	return id;
 }
 
-int16_t timer_start(int16_t id, uint32_t us)
+int16_t timer_start(int16_t id, uint32_t us, timer_cb_t cb)
 {
 	uint32_t ticks;
 
@@ -168,10 +164,11 @@ int16_t timer_start(int16_t id, uint32_t us)
 	ticks = ROUNDED_DIV((uint64_t)us * HFCLK, TIMER_SECONDS(1)
 					* ROUNDED_DIV(2 << TIMER_PRESCALER, 2));
 
+	update_cc(id, (uint64_t) ticks);
+
 	timers[id].active = 1;
 	timers[id].ticks = ticks;
-
-	update_cc(id, (uint64_t) ticks);
+	timers[id].cb = cb;
 
 	if (active == 0) {
 		NRF_TIMER0->TASKS_START = 1UL;

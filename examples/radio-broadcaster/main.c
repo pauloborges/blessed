@@ -77,7 +77,7 @@ static void adv_interval_timeout(void)
 	radio_send(adv_nonconn_ind, 0);
 
 	if (idx < 3)
-		timer_start(adv_interval, ADV_INTERVAL);
+		timer_start(adv_interval, ADV_INTERVAL, adv_interval_timeout);
 }
 
 static void adv_event_timeout(void)
@@ -92,14 +92,14 @@ int main(void)
 	timer_init();
 	radio_init();
 
-	adv_interval = timer_create(TIMER_SINGLESHOT, adv_interval_timeout);
-	adv_event = timer_create(TIMER_REPEATED, adv_event_timeout);
+	adv_interval = timer_create(TIMER_SINGLESHOT);
+	adv_event = timer_create(TIMER_REPEATED);
 
 	DBG("Advertising ADV_NONCONN_IND PDUs");
 	DBG("Time between PDUs:   %u ms", ADV_INTERVAL / 1000);
 	DBG("Time between events: %u ms", ADV_EVENT / 1000);
 
-	timer_start(adv_event, ADV_EVENT);
+	timer_start(adv_event, ADV_EVENT, adv_event_timeout);
 	adv_event_timeout();
 
 	while (1);

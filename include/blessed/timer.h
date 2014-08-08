@@ -33,6 +33,6 @@
 typedef void (*timer_cb_t) (void);
 
 int16_t timer_init(void);
-int16_t timer_create(uint8_t type, timer_cb_t cb);
-int16_t timer_start(int16_t id, uint32_t us);
+int16_t timer_create(uint8_t type);
+int16_t timer_start(int16_t id, uint32_t us, timer_cb_t cb);
 int16_t timer_stop(int16_t id);

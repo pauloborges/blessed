@@ -45,8 +45,8 @@ int main(void)
 	timer_init();
 	random_init();
 
-	timer = timer_create(TIMER_REPEATED, timeout_cb);
-	timer_start(timer, TIMER);
+	timer = timer_create(TIMER_REPEATED);
+	timer_start(timer, TIMER, timeout_cb);
 
 	while (1);
 
