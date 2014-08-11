@@ -50,3 +50,7 @@ Check the examples to see how to build and link an application with
 
 Check the [`examples/README.md`]
 (https://github.com/pauloborges/blessed/blob/devel/examples/README.md) file.
+
+## License
+
+**Blessed** is distributed under the MIT license.
