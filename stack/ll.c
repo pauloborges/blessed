@@ -177,19 +177,6 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 			radio_recv(0);
 			break;
 
-		case LL_STATE_ADVERTISING:
-			if (pdu_adv.type != LL_PDU_ADV_IND &&
-					pdu_adv.type != LL_PDU_ADV_SCAN_IND)
-				break;
-
-			if (rcvd_pdu->type != LL_PDU_SCAN_REQ)
-				break;
-
-			timer_stop(t_ll_ifs);
-			send_scan_rsp(rcvd_pdu);
-
-			break;
-
 		case LL_STATE_INITIATING:
 		case LL_STATE_CONNECTION:
 		case LL_STATE_STANDBY:
@@ -197,11 +184,6 @@ static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
 			/* Nothing to do */
 			return;
 	}
-}
-
-static void ll_on_radio_tx(bool active)
-{
-	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -291,8 +273,30 @@ static void t_ll_interval_cb(void)
 	}
 }
 
+static void adv_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
+{
+	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
+
+	if (pdu_adv.type != LL_PDU_ADV_IND &&
+					pdu_adv.type != LL_PDU_ADV_SCAN_IND)
+		return;
+
+	if (rcvd_pdu->type != LL_PDU_SCAN_REQ)
+		return;
+
+	timer_stop(t_ll_ifs);
+	send_scan_rsp(rcvd_pdu);
+}
+
+static void adv_radio_send_cb(bool active)
+{
+	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
+}
+
 int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 {
+	radio_recv_cb_t recv_cb;
+	radio_send_cb_t send_cb;
 	int16_t err_code;
 
 	if (current_state != LL_STATE_STANDBY)
@@ -313,10 +317,14 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	switch (type) {
 	case LL_PDU_ADV_IND:
 	case LL_PDU_ADV_SCAN_IND:
+		recv_cb = adv_radio_recv_cb;
+		send_cb = adv_radio_send_cb;
 		rx = true;
 		break;
 
 	case LL_PDU_ADV_NONCONN_IND:
+		recv_cb = NULL;
+		send_cb = NULL;
 		rx = false;
 		break;
 
@@ -330,8 +338,7 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	pdu_adv.type = type;
 	t_adv_pdu_interval = TIMER_MILLIS(10); /* <= 10ms Sec 4.4.2.6 */
 
-	radio_set_callbacks(rx ? ll_on_radio_rx : NULL,
-						rx ? ll_on_radio_tx : NULL);
+	radio_set_callbacks(recv_cb, send_cb);
 
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
