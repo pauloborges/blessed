@@ -76,7 +76,6 @@ struct __attribute__ ((packed)) ll_pdu_adv_ind {
 	uint8_t _rfu_1:2;
 
 	uint8_t adva[6];
-
 	uint8_t advdata[31];
 };
 
@@ -151,32 +150,45 @@ static void select_next_ch(void)
 	conn.ch = ch;
 }
 
+static inline uint16_t get_on_air_duration(const uint8_t *pdu)
+{
+	/* preamble (1 octet) + aa (4 octets) + header (2 octets)
+	 * + payload (len field) + crc (3 octets) */
+	return (10 + pdu[1]) * 8;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // CONNECTION
 ////////////////////////////////////////////////////////////////////////////////
 
-static void conn_evt_recv_cb(const uint8_t *pdu, bool crc, bool active)
+static void conn_ifs_cb(void)
 {
-	log_string("> Data PDU\r\n");
-	timer_stop(t_singleshot);
+	log_string("  end\r\n");
+	radio_stop();
 }
 
-static void end_conn_evt_cb(void)
+static void conn_evt_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
-	log_string("end of conn evt\r\n");
+	// NRF_TIMER1->TASKS_CAPTURE[3] = 1UL;
+	// log_uint(NRF_TIMER1->CC[3]);
+	// log_newline();
+
+	log_string("  pdu\r\n");
+	timer_stop(t_ifs);
 }
 
 static inline void conn_evt_cb(void)
 {
+	// log_uint(NRF_RTC0->COUNTER);
+	// log_newline();
+
 	select_next_ch();
 	radio_prepare(conn.ch, conn.aa, conn.crcinit);
 	radio_recv(RADIO_FLAGS_TX_NEXT);
 
-	timer_start(t_singleshot, 5000, end_conn_evt_cb);
+	timer_start(t_ifs, T_IFS, conn_ifs_cb);
 
-	log_string("cnn_evt ");
-	log_uint(conn.ch);
-	log_newline();
+	log_string("conn evt\r\n");
 }
 
 static void first_conn_evt_cb(void)
@@ -197,10 +209,14 @@ static void transmit_window_recv_cb(const uint8_t *pdu, bool crc, bool active)
 	// 1. stop the end transmit window timer
 	// 2. start repeated timer the first connection event
 
-	timer_stop(t_singleshot);
-	timer_start(t_singleshot, conn.interval - 1000, first_conn_evt_cb);
+	// NRF_RTC0->TASKS_START = 1UL;
 
-	log_string("> Data PDU\r\n");
+	uint32_t us = conn.interval - get_on_air_duration(pdu) - 6 - 150 - 500;
+
+	timer_start(t_singleshot, us, first_conn_evt_cb);
+	timer_stop(t_ifs);
+
+	log_string("  pdu\r\n");
 }
 
 static void end_transmit_window_cb(void)
@@ -209,7 +225,7 @@ static void end_transmit_window_cb(void)
 	// 1. stop the radio
 	// 2. go back to advertise state
 
-	log_string("end of transmit window\r\n");
+	log_string("  end\r\n");
 
 	radio_stop();
 	init_advertise();
@@ -222,7 +238,9 @@ static void init_transmit_window_cb(void)
 	// 2. start timer to get the end of the transmit window
 
 	radio_recv(RADIO_FLAGS_TX_NEXT);
-	timer_start(t_singleshot, conn.winsize, end_transmit_window_cb);
+	timer_start(t_ifs, conn.winsize, end_transmit_window_cb);
+
+	log_string("transmit win\r\n");
 }
 
 static inline void init_transmit_window(struct ll_pdu_connect_req *pdu)
@@ -233,7 +251,7 @@ static inline void init_transmit_window(struct ll_pdu_connect_req *pdu)
 	timer_start(t_singleshot, 1250 + pdu->winoffset * 1250 - 150,
 						init_transmit_window_cb);
 
-	log_string("> CONNECT_REQ\r\n");
+	log_string("CONNECT_REQ\r\n");
 
 	conn.ch = 0;
 
@@ -253,6 +271,8 @@ static inline void init_transmit_window(struct ll_pdu_connect_req *pdu)
 
 	select_next_ch();
 	radio_prepare(conn.ch, conn.aa, conn.crcinit);
+
+	log_printf("int %u us\r\n", conn.interval);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -328,15 +348,22 @@ int main(void)
 	radio_init();
 
 	/* Initialize TIMER1 */
-	NRF_TIMER1->MODE = TIMER_MODE_MODE_Timer;
-	NRF_TIMER1->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
-	NRF_TIMER1->PRESCALER = 4; /* 1 MHz */
-	NRF_TIMER1->TASKS_START = 1UL;
+	// NRF_TIMER1->MODE = TIMER_MODE_MODE_Timer;
+	// NRF_TIMER1->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
+	// NRF_TIMER1->PRESCALER = 4; /* 1 MHz */
+	// NRF_TIMER1->TASKS_START = 1UL;
 
 	/* Initialize PPI */
 	// NRF_PPI->CH[0].EEP = (uint32_t) (&NRF_RADIO->EVENTS_END);
 	// NRF_PPI->CH[0].TEP = (uint32_t) (&NRF_TIMER1->TASKS_CLEAR);
 	// NRF_PPI->CHEN = (PPI_CHEN_CH0_Enabled << PPI_CHEN_CH0_Pos);
+
+	/* Initialize RTC0 */
+	// NRF_CLOCK->LFCLKSRC = CLOCK_LFCLKSRC_SRC_Xtal
+	// 				<< CLOCK_LFCLKSRC_SRC_Pos;
+	// NRF_CLOCK->TASKS_LFCLKSTART = 1;
+	// while (!NRF_CLOCK->EVENTS_LFCLKSTARTED);
+	// NRF_RTC0->PRESCALER = 7; /* 4098 Hz */
 
 	t_singleshot = timer_create(TIMER_SINGLESHOT);
 	t_repeated = timer_create(TIMER_REPEATED);
