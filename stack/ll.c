@@ -170,52 +170,6 @@ static __inline int16_t inc_adv_ch_idx(void)
 	return 0;
 }
 
-/** Callback function for the "single shot" LL timer
- */
-static void t_ll_single_shot_cb(void)
-{
-	switch(current_state) {
-		case LL_STATE_SCANNING:
-			/* Called at the end of the scan window */
-			radio_stop();
-			break;
-
-		case LL_STATE_INITIATING:
-		case LL_STATE_CONNECTION:
-			/* Not implemented */
-		case LL_STATE_STANDBY:
-		default:
-			/* Nothing to do */
-			return;
-	}
-}
-
-/** Callback function for the "interval" LL timer
- */
-static void t_ll_interval_cb(void)
-{
-	switch(current_state) {
-		case LL_STATE_SCANNING:
-			if(!inc_adv_ch_idx())
-				adv_ch_idx = first_adv_ch_idx();
-
-			radio_prepare(adv_chs[adv_ch_idx],
-					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			radio_recv(0);
-			timer_start(t_ll_single_shot, t_scan_window,
-							t_ll_single_shot_cb);
-			break;
-
-		case LL_STATE_INITIATING:
-		case LL_STATE_CONNECTION:
-			/* Not implemented */
-		case LL_STATE_STANDBY:
-		default:
-			/* Nothing to do */
-			return;
-	}
-}
-
 static void adv_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
@@ -441,6 +395,23 @@ static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 	radio_recv(0);
 }
 
+static void scan_singleshot_cb(void)
+{
+	radio_stop();
+}
+
+static void scan_interval_cb(void)
+{
+	if (!inc_adv_ch_idx())
+		adv_ch_idx = first_adv_ch_idx();
+
+	radio_prepare(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
+								LL_CRCINIT_ADV);
+	radio_recv(0);
+
+	timer_start(t_ll_single_shot, t_scan_window, scan_singleshot_cb);
+}
+
 /**@brief Set scan parameters and start scanning
  *
  * @note The HCI spec specifies interval in units of 0.625 ms.
@@ -480,12 +451,12 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 	/* Setup timer and save window length */
 	t_scan_window = window;
 
-	err_code = timer_start(t_ll_interval, interval, t_ll_interval_cb);
+	err_code = timer_start(t_ll_interval, interval, scan_interval_cb);
 	if (err_code < 0)
 		return err_code;
 
 	current_state = LL_STATE_SCANNING;
-	t_ll_interval_cb();
+	scan_interval_cb();
 
 	DBG("interval %uus, window %uus", interval, window);
 
@@ -510,7 +481,7 @@ int16_t ll_scan_stop(void)
 		return err_code;
 
 	/* Call the single shot cb to stop the radio */
-	t_ll_single_shot_cb();
+	scan_singleshot_cb();
 
 	current_state = LL_STATE_STANDBY;
 
