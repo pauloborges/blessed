@@ -213,20 +213,6 @@ static __inline int16_t inc_adv_ch_idx(void)
 static void t_ll_single_shot_cb(void)
 {
 	switch(current_state) {
-		case LL_STATE_ADVERTISING:
-			radio_stop();
-			radio_prepare(adv_chs[adv_ch_idx],
-					LL_ACCESS_ADDRESS_ADV, LL_CRCINIT_ADV);
-			radio_send((uint8_t *) &pdu_adv,
-						rx ? RADIO_FLAGS_RX_NEXT : 0);
-
-			prev_adv_ch_idx = adv_ch_idx;
-			if (!inc_adv_ch_idx())
-				timer_start(t_ll_single_shot,
-							t_adv_pdu_interval,
-							t_ll_single_shot_cb);
-			break;
-
 		case LL_STATE_SCANNING:
 			/* Called at the end of the scan window */
 			radio_stop();
@@ -247,11 +233,6 @@ static void t_ll_single_shot_cb(void)
 static void t_ll_interval_cb(void)
 {
 	switch(current_state) {
-		case LL_STATE_ADVERTISING:
-			adv_ch_idx = first_adv_ch_idx();
-			t_ll_single_shot_cb();
-			break;
-
 		case LL_STATE_SCANNING:
 			if(!inc_adv_ch_idx())
 				adv_ch_idx = first_adv_ch_idx();
@@ -291,6 +272,25 @@ static void adv_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 static void adv_radio_send_cb(bool active)
 {
 	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
+}
+
+static void adv_singleshot_cb(void)
+{
+	radio_stop();
+	radio_prepare(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
+								LL_CRCINIT_ADV);
+	radio_send((uint8_t *) &pdu_adv, rx ? RADIO_FLAGS_RX_NEXT : 0);
+
+	prev_adv_ch_idx = adv_ch_idx;
+	if (!inc_adv_ch_idx())
+		timer_start(t_ll_single_shot, t_adv_pdu_interval,
+							adv_singleshot_cb);
+}
+
+static void adv_interval_cb(void)
+{
+	adv_ch_idx = first_adv_ch_idx();
+	adv_singleshot_cb();
 }
 
 int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
@@ -343,13 +343,13 @@ int16_t ll_advertise_start(ll_pdu_t type, uint32_t interval, uint8_t chmap)
 	DBG("PDU interval %u ms, event interval %u ms",
 				t_adv_pdu_interval / 1000, interval / 1000);
 
-	err_code = timer_start(t_ll_interval, interval, t_ll_interval_cb);
+	err_code = timer_start(t_ll_interval, interval, adv_interval_cb);
 	if (err_code < 0)
 		return err_code;
 
 	current_state = LL_STATE_ADVERTISING;
 
-	t_ll_interval_cb();
+	adv_interval_cb();
 
 	return 0;
 }
