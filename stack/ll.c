@@ -148,44 +148,6 @@ stop:
 	radio_stop();
 }
 
-/**@brief Function called by the radio driver (PHY layer) on packet RX
- * Dispatch the event according to the LL state
- */
-static void ll_on_radio_rx(const uint8_t *pdu, bool crc, bool active)
-{
-	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
-
-	switch(current_state) {
-		case LL_STATE_SCANNING:
-			if(!ll_adv_report_cb) {
-				ERROR("No adv. report callback defined");
-				return;
-			}
-
-			/* Extract information from PDU and call
-			 * ll_adv_report_cb
-			 */
-
-			ll_adv_report_cb(rcvd_pdu->type, rcvd_pdu->tx_add,
-						rcvd_pdu->payload,
-						rcvd_pdu->length - BDADDR_LEN,
-						rcvd_pdu->payload + BDADDR_LEN);
-
-			/* Receive new packets while the radio is not explicitly
-			 * stopped
-			 */
-			radio_recv(0);
-			break;
-
-		case LL_STATE_INITIATING:
-		case LL_STATE_CONNECTION:
-		case LL_STATE_STANDBY:
-		default:
-			/* Nothing to do */
-			return;
-	}
-}
-
 static __inline uint8_t first_adv_ch_idx(void)
 {
 	if (adv_ch_map & LL_ADV_CH_37)
@@ -460,6 +422,25 @@ int16_t ll_init(const bdaddr_t *addr)
 	return 0;
 }
 
+static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
+{
+	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
+
+	if (!ll_adv_report_cb) {
+		ERROR("No adv. report callback defined");
+		return;
+	}
+
+	/* Extract information from PDU and call ll_adv_report_cb */
+	ll_adv_report_cb(rcvd_pdu->type, rcvd_pdu->tx_add,
+				rcvd_pdu->payload,
+				rcvd_pdu->length - BDADDR_LEN,
+				rcvd_pdu->payload + BDADDR_LEN);
+
+	/* Receive new packets while the radio is not explicitly stopped */
+	radio_recv(0);
+}
+
 /**@brief Set scan parameters and start scanning
  *
  * @note The HCI spec specifies interval in units of 0.625 ms.
@@ -494,10 +475,11 @@ int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 			return -EINVAL;
 	}
 
-	radio_set_callbacks(ll_on_radio_rx, NULL);
+	radio_set_callbacks(scan_radio_recv_cb, NULL);
 
 	/* Setup timer and save window length */
 	t_scan_window = window;
+
 	err_code = timer_start(t_ll_interval, interval, t_ll_interval_cb);
 	if (err_code < 0)
 		return err_code;
