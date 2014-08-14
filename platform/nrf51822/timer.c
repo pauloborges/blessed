@@ -112,6 +112,11 @@ void TIMER0_IRQHandler(void)
 								- DRIFT_FIX);
 			} else if (timers[id].type == TIMER_SINGLESHOT) {
 				timers[id].active = 0;
+				active--;
+				if (active == 0) {
+					NRF_TIMER0->TASKS_STOP = 1UL;
+					NRF_TIMER0->TASKS_CLEAR = 1UL;
+				}
 			}
 
 			timers[id].cb();
