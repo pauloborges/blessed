@@ -691,9 +691,17 @@ static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 			is_addr_accepted(rcvd_pdu->tx_add, rcvd_pdu->payload) &&
 			is_addr_mine(rcvd_pdu->rx_add,
 					rcvd_pdu->payload+BDADDR_LEN)) ) {
-		/* TODO send CONNECT_REQ PDU
-		TODO go to CONNECTION_MASTER state
+		/* Complete CONNECT_REQ PDU with the advertiser's address */
+		pdu_connect_req.rx_add = rcvd_pdu->tx_add;
+		memcpy(pdu_connect_req.payload+BDADDR_LEN, rcvd_pdu->payload,
+								BDADDR_LEN);
+
+		/* TODO go to CONNECTION_MASTER state
 		TODO notify application (cb function) */
+	}
+	else {
+		radio_stop();
+		radio_recv(RADIO_FLAGS_TX_NEXT);
 	}
 }
 
@@ -709,7 +717,9 @@ static void init_interval_cb(void)
 
 	radio_prepare(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
 								LL_CRCINIT_ADV);
-	radio_recv(0);
+
+	radio_recv(RADIO_FLAGS_TX_NEXT);
+	radio_set_out_buffer((uint8_t*)&pdu_connect_req);
 
 	timer_start(t_ll_single_shot, t_scan_window, init_singleshot_cb);
 }
