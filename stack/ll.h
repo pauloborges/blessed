@@ -89,3 +89,7 @@ int16_t ll_advertise_stop(void);
 int16_t ll_scan_start(uint8_t scan_type, uint32_t interval, uint32_t window,
 						adv_report_cb_t adv_report_cb);
 int16_t ll_scan_stop(void);
+
+/* Initiating a connection */
+int16_t ll_conn_create(uint32_t interval, uint32_t window,
+			bdaddr_t* peer_addresses, uint16_t num_addresses);

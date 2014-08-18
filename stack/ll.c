@@ -98,6 +98,9 @@ static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 
 static bool rx = false;
+/* Internal pointer to an array of accepted peer addresses */
+static bdaddr_t *ll_peer_addresses;
+static uint16_t ll_num_peer_addresses; /* Size of the accepted peers array */
 
 /** Timers used by the LL
  * Three timers are shared for the various states : one for triggering
@@ -486,6 +489,67 @@ int16_t ll_scan_stop(void)
 	current_state = LL_STATE_STANDBY;
 
 	DBG("");
+
+	return 0;
+}
+
+static void init_singleshot_cb(void)
+{
+	radio_stop();
+}
+
+static void init_interval_cb(void)
+{
+	if (!inc_adv_ch_idx())
+		adv_ch_idx = first_adv_ch_idx();
+
+	radio_prepare(adv_chs[adv_ch_idx], LL_ACCESS_ADDRESS_ADV,
+								LL_CRCINIT_ADV);
+	radio_recv(0);
+
+	timer_start(t_ll_single_shot, t_scan_window, init_singleshot_cb);
+}
+
+/**@brief Try to establish a connection with the specified peer
+ *
+ * @param [in] interval: the scanning interval in us (2.5ms -> 10.24s)
+ * @param [in] window: the scanning window in us (2.5ms -> 10.24s)
+ * @param [in] peer_addresses: a pointer to an array of Bluetooth addresses
+ * 	to try to connect
+ * @param [in] num_addresses: the size of the peer_addresses array
+ */
+int16_t ll_conn_create(uint32_t interval, uint32_t window,
+			bdaddr_t* peer_addresses, uint16_t num_addresses)
+{
+	int16_t err_code;
+
+	if (current_state != LL_STATE_STANDBY)
+		return -ENOREADY;
+
+	if (window > interval) {
+		ERROR("interval must be greater than window");
+		return -EINVAL;
+	}
+
+	if (peer_addresses == NULL || num_addresses == 0) {
+		ERROR("at least one peer address must be specified");
+		return -EINVAL;
+	}
+
+	ll_peer_addresses = peer_addresses;
+	ll_num_peer_addresses = num_addresses;
+
+	/* Initiating state :
+	 * see Link Layer specification Section 4.4.4, Core v4.1 p.2537 */
+	t_scan_window = window;
+	err_code = timer_start(t_ll_interval, interval, init_interval_cb);
+	if (err_code < 0)
+		return err_code;
+
+	current_state = LL_STATE_INITIATING;
+	init_interval_cb();
+
+	DBG("interval %uus, window %uus", interval, window);
 
 	return 0;
 }
