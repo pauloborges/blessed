@@ -33,6 +33,7 @@
 #include <blessed/log.h>
 #include <blessed/timer.h>
 #include <blessed/bdaddr.h>
+#include <blessed/random.h>
 
 #include "radio.h"
 #include "ll.h"
@@ -79,6 +80,23 @@ struct __attribute__ ((packed)) ll_pdu_scan_req {
 	uint8_t adva[6];
 };
 
+/* Link Layer specification Section 2.3.3.1, Core 4.1 page 2509
+ * CONNECT_REQ PDU payload */
+struct __attribute__ ((packed)) ll_pdu_connect_payload {
+	uint8_t		init_add[BDADDR_LEN];	/* Initiator address */
+	uint8_t		adv_add[BDADDR_LEN];	/* Advertiser address */
+	uint32_t	aa;			/* connection Access Address */
+	uint32_t	crc_init:24;		/* connection CRC init */
+	uint8_t		win_size;		/* tx window size (*1.25ms) */
+	uint16_t	win_offset;		/* tx window offset (*1.25ms) */
+	uint16_t	interval;		/* conn. interval (*1.25ms) */
+	uint16_t	latency;		/* conn. slave latency */
+	uint16_t	timeout;		/* conn. supervision (*10ms) */
+	uint64_t	ch_map:40;		/* channel map */
+	uint8_t		hop:5;			/* hop increment */
+	uint8_t		sca:3;			/* Master sleep clock accuracy */
+};
+
 static const bdaddr_t *laddr;
 static ll_states_t current_state;
 
@@ -107,6 +125,7 @@ static uint32_t t_scan_window;
 
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
+static struct ll_pdu_adv pdu_connect_req;
 
 static bool rx = false;
 static ll_conn_params_t ll_conn_params;
@@ -183,6 +202,21 @@ static __inline bool is_addr_mine(uint8_t addr_type, uint8_t *addr)
 {
 	return (laddr->type == addr_type
 				&& !memcmp(addr, laddr->addr, BDADDR_LEN));
+}
+
+/**@brief Generate an appropriate, random Access Address following rules in
+ * Link Layer specification Section 2.1.2, Core 4.1 pages 2503-2504
+ */
+static uint32_t generate_access_address(void)
+{
+	uint32_t aa = 0;
+	do {
+		for (int i = 0; i < 4; i++)
+			aa |= (random_generate() << (8*i));
+	} while (aa == LL_ACCESS_ADDRESS_ADV);
+	/* TODO: check for the various other requirements in the spec */
+
+	return aa;
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -386,6 +420,51 @@ static void init_default_conn_params(void)
 	ll_set_data_ch_map(LL_DATA_CH_ALL);
 }
 
+/**@brief At the beginning of a new connection, prepare the CONNECT_REQ PDU to
+ * send
+ *
+ * See Link Layer specification Section 4.5, Core 4.1 pages 2537-2547
+ */
+static void init_connect_req_pdu()
+{
+	struct ll_pdu_connect_payload *payload;
+
+	pdu_connect_req.type = LL_PDU_CONNECT_REQ;
+	pdu_connect_req.tx_add = laddr->type;
+	pdu_connect_req.length = sizeof(*payload);
+
+	payload = (struct ll_pdu_connect_payload*)(pdu_connect_req.payload);
+	memcpy(payload->init_add, laddr->addr, BDADDR_LEN);
+
+	payload->aa = generate_access_address();
+	payload->crc_init = 0;
+	for (int i = 0; i < 3; i++)
+		payload->crc_init |= (random_generate() << (8*i));
+
+	/* Max. allowed value : min(10ms, connInterval-1.25ms) */
+	if (ll_conn_params.conn_interval_min > 8)
+		payload->win_size = 8;
+	else
+		payload->win_size = ll_conn_params.conn_interval_min-1;
+
+	/* The interval timer is set to fire every conn_interval_min just
+	 * after the CONNECT_REQ PDU is sent. We set the offset to
+	 * conn_interval_min - 3 to keep a wide window almost centered on the
+	 * first timer event.
+	 */
+	payload->win_offset = ll_conn_params.conn_interval_min-3;
+
+	payload->interval = ll_conn_params.conn_interval_min;
+	payload->latency = ll_conn_params.conn_latency;
+	payload->timeout = ll_conn_params.supervision_timeout;
+	payload->ch_map = data_ch_map.mask;
+
+	/* "Random" value between 5 and 16 */
+	payload->hop = (random_generate() % 12) + 5;
+	payload->sca = 0; /* Worst accuracy : 251->500ppm */
+
+}
+
 int16_t ll_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
@@ -402,6 +481,10 @@ int16_t ll_init(const bdaddr_t *addr)
 		return err_code;
 
 	err_code = radio_init();
+	if (err_code < 0)
+		return err_code;
+
+	err_code = random_init();
 	if (err_code < 0)
 		return err_code;
 
@@ -659,6 +742,9 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 
 	ll_peer_addresses = peer_addresses;
 	ll_num_peer_addresses = num_addresses;
+
+	/* Generate new connection parameters and init CONNECT_REQ PDU */
+	init_connect_req_pdu();
 
 	radio_set_callbacks(init_radio_recv_cb, NULL);
 
