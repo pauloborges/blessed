@@ -115,3 +115,4 @@ int16_t ll_set_conn_params(ll_conn_params_t* conn_params);
 int16_t ll_set_data_ch_map(uint64_t ch_map);
 int16_t ll_conn_create(uint32_t interval, uint32_t window,
 			bdaddr_t* peer_addresses, uint16_t num_addresses);
+int16_t ll_conn_cancel(void);
