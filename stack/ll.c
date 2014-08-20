@@ -91,6 +91,17 @@ static uint8_t adv_ch_idx;
 static uint8_t prev_adv_ch_idx;
 static uint8_t adv_ch_map;
 
+/* Link Layer specification Section 1.4, Core 4.1 page 2501 */
+#define LL_DATA_CH_NB			37
+
+/* Connection state channel map
+ * Must not be modified directly, use function ll_set_data_ch_map() instead */
+static struct {
+	uint64_t mask:40;
+	uint8_t used[LL_DATA_CH_NB];
+	uint8_t cnt;
+} data_ch_map;
+
 static uint32_t t_adv_pdu_interval;
 static uint32_t t_scan_window;
 
@@ -98,6 +109,7 @@ static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 
 static bool rx = false;
+static ll_conn_params_t ll_conn_params;
 /* Internal pointer to an array of accepted peer addresses */
 static bdaddr_t *ll_peer_addresses;
 static uint16_t ll_num_peer_addresses; /* Size of the accepted peers array */
@@ -362,6 +374,18 @@ static void init_adv_pdus(void)
 	ll_set_scan_response_data(NULL, 0);
 }
 
+static void init_default_conn_params(void)
+{
+	ll_conn_params.conn_interval_min	= 16; /* 20 ms */
+	ll_conn_params.conn_interval_max 	= 160; /* 200 ms */
+	ll_conn_params.conn_latency 		= 0;
+	ll_conn_params.supervision_timeout	= 100; /* 1s */
+	ll_conn_params.minimum_ce_length	= 0;
+	ll_conn_params.maximum_ce_length	= 16; /* 10 ms */
+
+	ll_set_data_ch_map(LL_DATA_CH_ALL);
+}
+
 int16_t ll_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
@@ -397,6 +421,7 @@ int16_t ll_init(const bdaddr_t *addr)
 	current_state = LL_STATE_STANDBY;
 
 	init_adv_pdus();
+	init_default_conn_params();
 
 	return 0;
 }
@@ -511,6 +536,59 @@ int16_t ll_scan_stop(void)
 	current_state = LL_STATE_STANDBY;
 
 	DBG("");
+
+	return 0;
+}
+
+/**@brief Set desired connection parameters
+ *
+ * @param [in] conn_params: a pointer to a new connection parameters struct
+ */
+int16_t ll_set_conn_params(ll_conn_params_t* conn_params)
+{
+	if (conn_params->conn_interval_max < conn_params->conn_interval_min) {
+		ERROR("Min conn. interval must be lower than max interval");
+		return -EINVAL;
+	}
+
+	if (conn_params->maximum_ce_length < conn_params->minimum_ce_length) {
+		ERROR("Min CE length must be lower than max CE length");
+		return -EINVAL;
+	}
+
+	/* TODO: check that the values are between min and max */
+	ll_conn_params = *conn_params;
+
+	return 0;
+}
+
+/**@brief Set data channel map to specify which channels can be used in connection
+ * events.
+ *
+ * @param [in] ch_map: the new channel map ; every channel is represented by a bit
+ * 	with the LSB being channel index 0 and the 36th bit data channel 36.
+ * 	A 1 indicates that the channel is used.
+ */
+int16_t ll_set_data_ch_map(uint64_t ch_map)
+{
+	/* Mask to avoid channel indexes > 36 */
+	ch_map &= LL_DATA_CH_ALL;
+
+	data_ch_map.mask = ch_map;
+	data_ch_map.cnt= 0;
+
+	/* Build remapping table (used indexes in acending order */
+	for (uint8_t i = 0; i < LL_DATA_CH_NB; i++) {
+		if (ch_map & (1ULL << i)) {
+			data_ch_map.used[data_ch_map.cnt] = i;
+			data_ch_map.cnt++;
+		}
+	}
+
+	if (data_ch_map.cnt < 2) {
+		ERROR("Invalid channel map : 0x%10x", ch_map);
+		return -EINVAL;
+	}
 
 	return 0;
 }
