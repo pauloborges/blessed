@@ -151,6 +151,28 @@ stop:
 	radio_stop();
 }
 
+/* Check if the specified address is in the accepted peer addresses */
+static __inline bool is_addr_accepted(uint8_t addr_type, uint8_t *addr)
+{
+	bool result = false;
+
+	for (int i = 0; i < ll_num_peer_addresses; i++) {
+		result = ((ll_peer_addresses+i)->type == addr_type
+				&& !memcmp(addr, (ll_peer_addresses+i)->addr,
+								BDADDR_LEN));
+		if (result)
+			break;
+	}
+	return result;
+}
+
+/* Check if the specified address is mine */
+static __inline bool is_addr_mine(uint8_t addr_type, uint8_t *addr)
+{
+	return (laddr->type == addr_type
+				&& !memcmp(addr, laddr->addr, BDADDR_LEN));
+}
+
 static __inline uint8_t first_adv_ch_idx(void)
 {
 	if (adv_ch_map & LL_ADV_CH_37)
@@ -493,6 +515,27 @@ int16_t ll_scan_stop(void)
 	return 0;
 }
 
+static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
+{
+	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
+
+	/* Answer to ADV_IND (connectable undirected advertising event) and
+	 * ADV_DIRECT_IND (connectable directed advertising event) PDUs from
+	 * accepted addresses with a CONNECT_REQ PDU */
+
+	/* See Link Layer specification Section 2.3, Core 4.1 page 2505 */
+	if ( (rcvd_pdu->type == LL_PDU_ADV_IND &&
+			is_addr_accepted(rcvd_pdu->tx_add, rcvd_pdu->payload))
+		|| (rcvd_pdu->type == LL_PDU_ADV_DIRECT_IND &&
+			is_addr_accepted(rcvd_pdu->tx_add, rcvd_pdu->payload) &&
+			is_addr_mine(rcvd_pdu->rx_add,
+					rcvd_pdu->payload+BDADDR_LEN)) ) {
+		/* TODO send CONNECT_REQ PDU
+		TODO go to CONNECTION_MASTER state
+		TODO notify application (cb function) */
+	}
+}
+
 static void init_singleshot_cb(void)
 {
 	radio_stop();
@@ -538,6 +581,8 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 
 	ll_peer_addresses = peer_addresses;
 	ll_num_peer_addresses = num_addresses;
+
+	radio_set_callbacks(init_radio_recv_cb, NULL);
 
 	/* Initiating state :
 	 * see Link Layer specification Section 4.4.4, Core v4.1 p.2537 */
