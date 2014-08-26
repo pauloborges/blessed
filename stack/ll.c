@@ -242,6 +242,35 @@ static __inline int16_t inc_adv_ch_idx(void)
 	return 0;
 }
 
+/**@brief Function that implement the Data channel index selection
+ * Used in connection states to determine the BLE channel to use for the next
+ * connection event.
+ *
+ * See Link Layer specification Section 4.5.8, Core v4.1 p.2544
+ *
+ * @param[in,out] unmapped_channel: a pointer to a variable containing the
+ *	lastUnmappedChannel defined in LL spec. This variable will be updated
+ * 	to store the new unmappedChannel.
+ * @param[in] hop: the hopIncrement defined in LL spec (increment between 2
+ * 	unmapped channels)
+ *
+ * @return the data channel index to use for the next connection event, according
+ * 	to the global channel map data_ch_map.
+ */
+static __inline__ uint8_t data_ch_idx_selection(uint8_t *unmapped_channel,
+								uint8_t hop)
+{
+	*unmapped_channel = (*unmapped_channel + hop) % 37;
+
+	/* Return unmapped_channel if it is an used channel */
+	if ( data_ch_map.mask & (1ULL << (*unmapped_channel)) )
+		return (*unmapped_channel);
+
+	else
+		return data_ch_map.used[(*unmapped_channel) % data_ch_map.cnt];
+}
+
+
 static void adv_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
