@@ -69,15 +69,13 @@ static __inline const char *format_data(const uint8_t *data, uint8_t len)
     return output;
 }
 
-void adv_report_cb(ll_pdu_t type, uint8_t addr_type, const uint8_t *addr,
-					uint8_t len, const uint8_t *data)
+void adv_report_cb(struct adv_report *report)
 {
-	DBG("adv type %02x, addr type %02x", type, addr_type);
-	DBG("address %s, data %s", format_address(addr),
-						format_data(data, len));
+	DBG("adv type %02x, addr type %02x", report->type, report->addr.type);
+	DBG("address %s, data %s", format_address(report->addr.addr),
+					format_data(report->data, report->len));
 
-	memcpy(peer_addr.addr, addr, BDADDR_LEN);
-	peer_addr.type = addr_type;
+	memcpy(&peer_addr, &report->addr, sizeof(bdaddr_t));
 
 	ll_scan_stop();
 	ll_conn_create(SCAN_INTERVAL, SCAN_WINDOW, &peer_addr, 1);

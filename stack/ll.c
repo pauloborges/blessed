@@ -521,11 +521,16 @@ static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		return;
 	}
 
-	/* Extract information from PDU and call ll_adv_report_cb */
-	ll_adv_report_cb(rcvd_pdu->type, rcvd_pdu->tx_add,
-				rcvd_pdu->payload,
-				rcvd_pdu->length - BDADDR_LEN,
-				rcvd_pdu->payload + BDADDR_LEN);
+	struct adv_report report = {
+		.type = rcvd_pdu->type,
+		.addr = { .type = rcvd_pdu->tx_add },
+		.data = rcvd_pdu->payload + BDADDR_LEN,
+		.len = rcvd_pdu->length - BDADDR_LEN
+	};
+
+	memcpy(report.addr.addr, rcvd_pdu->payload, BDADDR_LEN);
+
+	ll_adv_report_cb(&report);
 }
 
 static void scan_singleshot_cb(void)

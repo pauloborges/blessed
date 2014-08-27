@@ -91,11 +91,16 @@ typedef struct {
 	uint16_t	maximum_ce_length;
 } ll_conn_params_t;
 
+struct adv_report {
+	ll_pdu_t	type;
+	bdaddr_t	addr;
+	const uint8_t 	*data;
+	uint8_t		len;
+};
+
 /* Callback function for LE advertising reports (scanning mode)
  * See HCI Funcional Specification Section 7.7.65.2, Core 4.1 page 1220 */
-typedef void (*adv_report_cb_t)(ll_pdu_t type, uint8_t addr_type,
-					const uint8_t *addr, uint8_t len,
-					const uint8_t *data);
+typedef void (*adv_report_cb_t)(struct adv_report *report);
 
 int16_t ll_init(const bdaddr_t *addr);
 
