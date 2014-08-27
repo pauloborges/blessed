@@ -50,38 +50,38 @@ vpath %.s $(ASM_PATHS)
 all: $(BUILD_PATH) $(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 $(BUILD_PATH)/$(PROJECT_TARGET).bin: $(BUILD_PATH)/$(PROJECT_TARGET).out
-	@echo "OBJCOPY\t$@"
+	@echo -e "OBJCOPY\t $@"
 	@$(OBJCOPY) -Obinary	$(BUILD_PATH)/$(PROJECT_TARGET).out	\
 				$(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 $(BUILD_PATH)/$(PROJECT_TARGET).out: $(C_OBJ_FILES) $(ASM_OBJ_FILES)
-	@echo "  LD\t$@"
+	@echo -e "LD\t $@"
 	@$(LD) $(LDFLAGS) $(C_OBJ_FILES) $(ASM_OBJ_FILES) $(LIBBLESSED) -o $@
-	@echo " SIZE\t$@"
+	@echo -e "SIZE\t $@"
 	@$(SIZE) $@
 
 $(BUILD_PATH)/%.o: %.c
-	@echo "  CC\t$<"
+	@echo -e "CC\t $<"
 	@$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILD_PATH)/%.o: %.s
-	@echo "  CC\t$<"
+	@echo -e "CC\t $<"
 	@$(CC) $(ASMFLAGS) -o $@ $<
 
 $(BUILD_PATH):
-	@echo " MKDIR\t$@"
+	@echo -e "MKDIR\t $@"
 	@-mkdir $@
 
 install: all
-	@echo "INSTALL\t$(PROJECT_TARGET)"
+	@echo -e "INSTALL\t $(PROJECT_TARGET)"
 	@$(PROGRAMMER) --jlinkexe $(JLINK_EXE) flash $(BUILD_PATH)/$(PROJECT_TARGET).bin
 
 erase:
-	@echo " ERASE"
+	@echo -e "ERASE"
 	@$(PROGRAMMER) --jlinkexe $(JLINK_EXE) erase
 
 clean:
-	@echo " CLEAN"
+	@echo -e "CLEAN"
 	@rm -rf $(BUILD_PATH) *.log
 
 .PHONY: all install erase clean

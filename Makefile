@@ -48,25 +48,25 @@ vpath %.s $(ASM_PATHS)
 all: $(BUILD_PATH) $(LIB_TARGET)
 
 $(LIB_TARGET): $(C_OBJ_FILES) $(ASM_OBJ_FILES)
-	@echo "  AR\t$@"
+	@echo -e "AR\t $@"
 	@$(AR) $(ARFLAGS) $@ $(C_OBJ_FILES) $(ASM_OBJ_FILES) > /dev/null 2>&1
-	@echo " SIZE\t$@"
+	@echo -e "SIZE\t $@"
 	@$(SIZE) $@
 
 $(BUILD_PATH)/%.o: %.c
-	@echo "  CC\t$<"
+	@echo -e "CC\t $<"
 	@$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILD_PATH)/%.o: %.s
-	@echo "  CC\t$<"
+	@echo -e "CC\t $<"
 	@$(CC) $(ASMFLAGS) -o $@ $<
 
 $(BUILD_PATH):
-	@echo " MKDIR\t$@"
+	@echo -e "MKDIR\t $@"
 	@-mkdir $@
 
 clean:
-	@echo " CLEAN"
+	@echo -e "CLEAN"
 	@rm -rf $(BUILD_PATH) *.log
 
 examples: clean all
