@@ -29,6 +29,7 @@
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
+#include <blessed/evtloop.h>
 
 #define TIMER1				TIMER_MILLIS(1000)
 #define TIMER2				TIMER_MILLIS(3000)
@@ -64,7 +65,7 @@ int main(void)
 	timer_start(timer1, TIMER1, timeout1);
 	timer_start(timer2, TIMER2, timeout2);
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

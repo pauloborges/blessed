@@ -30,6 +30,7 @@
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
+#include <blessed/evtloop.h>
 
 #include "radio.h"
 
@@ -156,7 +157,7 @@ int main(void)
 	timer_start(scan_window, SCAN_WINDOW, scan_window_timeout);
 	scan_window_timeout();
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

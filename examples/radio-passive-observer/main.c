@@ -31,6 +31,7 @@
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
+#include <blessed/evtloop.h>
 
 #include "radio.h"
 
@@ -126,7 +127,7 @@ int main(void)
 	timer_start(scan_interval, SCAN_INTERVAL, scan_interval_timeout);
 	scan_interval_timeout();
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

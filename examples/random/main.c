@@ -29,6 +29,7 @@
 #include <blessed/log.h>
 #include <blessed/timer.h>
 #include <blessed/random.h>
+#include <blessed/evtloop.h>
 
 #define TIMER				TIMER_SECONDS(1)
 
@@ -48,7 +49,7 @@ int main(void)
 	timer = timer_create(TIMER_REPEATED);
 	timer_start(timer, TIMER, timeout_cb);
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

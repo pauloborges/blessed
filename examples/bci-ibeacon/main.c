@@ -28,6 +28,7 @@
 #include <stdbool.h>
 
 #include <blessed/bluetooth.h>
+#include <blessed/evtloop.h>
 
 #define BLE_ADDRESS_ADDR		{ 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF }
 #define BLE_ADDRESS_TYPE		BDADDR_TYPE_RANDOM
@@ -64,7 +65,7 @@ int main(void)
 	bci_set_advertising_data(data, len);
 	bci_set_advertise_enable(BCI_ENABLE);
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

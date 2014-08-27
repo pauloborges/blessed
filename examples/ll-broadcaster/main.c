@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include <blessed/bdaddr.h>
+#include <blessed/evtloop.h>
 
 #include "ll.h"
 
@@ -53,7 +54,7 @@ int main(void)
 	ll_set_scan_response_data(scan_data, sizeof(scan_data));
 	ll_advertise_start(LL_PDU_ADV_SCAN_IND, ADV_INTERVAL, LL_ADV_CH_ALL);
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }

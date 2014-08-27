@@ -30,6 +30,7 @@
 
 #include <blessed/bdaddr.h>
 #include <blessed/log.h>
+#include <blessed/evtloop.h>
 
 #include "nrf_delay.h"
 
@@ -93,7 +94,7 @@ int main(void)
 	ll_scan_start(LL_SCAN_PASSIVE, SCAN_INTERVAL, SCAN_WINDOW,
 							adv_report_cb);
 
-	while(1);
+	evt_loop_run();
 
 	return 0;
 }

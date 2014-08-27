@@ -32,6 +32,7 @@
 
 #include <blessed/timer.h>
 #include <blessed/log.h>
+#include <blessed/evtloop.h>
 
 #include "radio.h"
 
@@ -196,7 +197,7 @@ int main(void)
 	timer_start(adv_event, ADV_EVENT, adv_event_timeout);
 	adv_event_timeout();
 
-	while (1);
+	evt_loop_run();
 
 	return 0;
 }
