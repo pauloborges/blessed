@@ -513,6 +513,9 @@ static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
 
+	/* Receive new packets while the radio is not explicitly stopped */
+	radio_recv(0);
+
 	if (!ll_adv_report_cb) {
 		ERROR("No adv. report callback defined");
 		return;
@@ -523,9 +526,6 @@ static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 				rcvd_pdu->payload,
 				rcvd_pdu->length - BDADDR_LEN,
 				rcvd_pdu->payload + BDADDR_LEN);
-
-	/* Receive new packets while the radio is not explicitly stopped */
-	radio_recv(0);
 }
 
 static void scan_singleshot_cb(void)
