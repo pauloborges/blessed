@@ -113,6 +113,7 @@ void TIMER0_IRQHandler(void)
 			} else if (timers[id].type == TIMER_SINGLESHOT) {
 				timers[id].active = 0;
 				active--;
+
 				if (active == 0) {
 					NRF_TIMER0->TASKS_STOP = 1UL;
 					NRF_TIMER0->TASKS_CLEAR = 1UL;
@@ -240,11 +241,10 @@ uint32_t timer_get_remaining_us(int16_t id)
 		return 0;
 
 	if (NRF_TIMER0->CC[id] > curr)
-		ticks = NRF_TIMER0->CC[id]-curr;
+		ticks = NRF_TIMER0->CC[id] - curr;
 	else
 		ticks = (0xFFFFFF-curr) + NRF_TIMER0->CC[id];
 
-	return ROUNDED_DIV((uint64_t)ticks * TIMER_SECONDS(1) *
-					ROUNDED_DIV(2 << TIMER_PRESCALER, 2),
-									HFCLK);
+	return ROUNDED_DIV((uint64_t) ticks * TIMER_SECONDS(1) *
+				ROUNDED_DIV(2 << TIMER_PRESCALER, 2), HFCLK);
 }
