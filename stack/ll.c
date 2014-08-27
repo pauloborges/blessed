@@ -76,8 +76,8 @@ struct __attribute__ ((packed)) ll_pdu_adv {
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2508 */
 struct __attribute__ ((packed)) ll_pdu_scan_req {
-	uint8_t scana[6];
-	uint8_t adva[6];
+	uint8_t scana[BDADDR_LEN];
+	uint8_t adva[BDADDR_LEN];
 };
 
 /* Link Layer specification Section 2.3.3.1, Core 4.1 page 2509
