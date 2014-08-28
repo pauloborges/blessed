@@ -47,6 +47,7 @@
 #define DRIFT_FIX			(1UL << (5 - TIMER_PRESCALER))
 
 #define ROUNDED_DIV(A, B)		(((A) + ((B) / 2)) / (B))
+#define POW2(e)				ROUNDED_DIV(2 << e, 2)
 #define BIT(n)				(1 << n)
 
 struct timer {
@@ -59,6 +60,18 @@ struct timer {
 
 static struct timer timers[MAX_TIMERS];
 static uint8_t active = 0;
+
+static __inline uint32_t us2ticks(uint64_t us)
+{
+	return ROUNDED_DIV(us * HFCLK, TIMER_SECONDS(1)
+						* POW2(TIMER_PRESCALER));
+}
+
+static __inline uint32_t ticks2us(uint64_t ticks)
+{
+	return ROUNDED_DIV(ticks * TIMER_SECONDS(1) * POW2(TIMER_PRESCALER),
+									HFCLK);
+}
 
 static __inline void get_clr_set_masks(uint8_t id, uint32_t *clr, uint32_t *set)
 {
@@ -186,8 +199,7 @@ int16_t timer_start(int16_t id, uint32_t us, timer_cb_t cb)
 	if (timers[id].active)
 		return -EALREADY;
 
-	ticks = ROUNDED_DIV((uint64_t)us * HFCLK, TIMER_SECONDS(1)
-					* ROUNDED_DIV(2 << TIMER_PRESCALER, 2));
+	ticks = us2ticks(us);
 
 	if (ticks >= 0xFFFFFF)
 		return -EINVAL;
@@ -245,6 +257,5 @@ uint32_t timer_get_remaining_us(int16_t id)
 	else
 		ticks = (0xFFFFFF - curr) + NRF_TIMER0->CC[id];
 
-	return ROUNDED_DIV((uint64_t) ticks * TIMER_SECONDS(1) *
-				ROUNDED_DIV(2 << TIMER_PRESCALER, 2), HFCLK);
+	return ticks2us(ticks);
 }
