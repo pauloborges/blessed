@@ -154,6 +154,7 @@ static void t_ll_ifs_cb(void)
 
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
+static struct adv_report ll_adv_report;
 
 static __inline void send_scan_rsp(const struct ll_pdu_adv *pdu)
 {
@@ -525,16 +526,16 @@ static void scan_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		return;
 	}
 
-	struct adv_report report = {
+	ll_adv_report = (struct adv_report) {
 		.type = rcvd_pdu->type,
 		.addr = { .type = rcvd_pdu->tx_add },
 		.data = rcvd_pdu->payload + BDADDR_LEN,
 		.len = rcvd_pdu->length - BDADDR_LEN
 	};
 
-	memcpy(report.addr.addr, rcvd_pdu->payload, BDADDR_LEN);
+	memcpy(ll_adv_report.addr.addr, rcvd_pdu->payload, BDADDR_LEN);
 
-	ll_adv_report_cb(&report);
+	ll_plat_send_adv_report(ll_adv_report_cb, &ll_adv_report);
 }
 
 static void scan_singleshot_cb(void)
