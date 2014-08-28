@@ -243,7 +243,7 @@ uint32_t timer_get_remaining_us(int16_t id)
 	if (NRF_TIMER0->CC[id] > curr)
 		ticks = NRF_TIMER0->CC[id] - curr;
 	else
-		ticks = (0xFFFFFF-curr) + NRF_TIMER0->CC[id];
+		ticks = (0xFFFFFF - curr) + NRF_TIMER0->CC[id];
 
 	return ROUNDED_DIV((uint64_t) ticks * TIMER_SECONDS(1) *
 				ROUNDED_DIV(2 << TIMER_PRESCALER, 2), HFCLK);
