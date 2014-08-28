@@ -472,6 +472,10 @@ int16_t ll_init(const bdaddr_t *addr)
 	if (addr == NULL)
 		return -EINVAL;
 
+	err_code = ll_plat_init();
+	if (err_code < 0)
+		return err_code;
+
 	err_code = log_init();
 	if (err_code < 0 && err_code != -EALREADY)
 		return err_code;
