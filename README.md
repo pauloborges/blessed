@@ -31,7 +31,7 @@ requests are ignored.
 
 Currently, only the [`nRF51822`]
 (https://github.com/pauloborges/blessed/tree/devel/platform/nrf51822) SoC from
-[Nordic Semiconductors](https://www.nordicsemi.com/) is supported.
+[Nordic Semiconductor](https://www.nordicsemi.com/) is supported.
 
 ## How to compile it
 
