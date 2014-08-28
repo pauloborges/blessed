@@ -75,7 +75,8 @@ PLATFORM_SOURCE_FILES	= system_nrf51.c				\
 			  timer.c					\
 			  radio.c                                       \
                           random.c					\
-                          evtloop.c
+                          evtloop.c					\
+                          ll-plat.c
 
 PLATFORM_ASM_PATHS	= $(SDK_TEMPLATE_PATH)/gcc
 
