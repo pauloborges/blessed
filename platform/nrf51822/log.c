@@ -30,13 +30,14 @@
 #include <string.h>
 
 #include <app_uart.h>
-#include <nrf_delay.h>
 #include <boards.h>
+#include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
 #include <blessed/log.h>
 
 #include "nrf51822.h"
+#include "delay.h"
 
 #if CONFIG_LOG_ENABLE
 
@@ -58,6 +59,8 @@
 #define BUFFER_USED_SPACE()		(wp - rp)
 #define WP				(wp & BUFFER_MASK)
 #define RP				(rp & BUFFER_MASK)
+
+#define UART_INIT_DELAY			1000 /* 1 ms */
 
 #define UNINITIALIZED			0
 #define READY				1
@@ -266,7 +269,7 @@ int16_t log_init(void)
 	state = READY;
 
 	/* Necessary to fully initialize the UART */
-	nrf_delay_ms(1);
+	delay(UART_INIT_DELAY);
 	log_newline();
 
 	return 0;
