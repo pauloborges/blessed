@@ -29,11 +29,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <blessed/timer.h>
 #include <blessed/log.h>
 #include <blessed/evtloop.h>
 
 #include "radio.h"
+#include "timer.h"
 
 #define ADV_CHANNEL_AA			0x8E89BED6
 #define ADV_CHANNEL_CRC			0x555555

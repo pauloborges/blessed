@@ -27,9 +27,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <blessed/timer.h>
 #include <blessed/log.h>
 #include <blessed/evtloop.h>
+
+#include "timer.h"
 
 #define TIMER1				TIMER_MILLIS(1000)
 #define TIMER2				TIMER_MILLIS(3000)

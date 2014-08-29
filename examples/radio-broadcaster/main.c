@@ -28,11 +28,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <blessed/timer.h>
 #include <blessed/log.h>
 #include <blessed/evtloop.h>
 
 #include "radio.h"
+#include "timer.h"
 
 /* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */
 #define ADV_CHANNEL_AA			0x8E89BED6

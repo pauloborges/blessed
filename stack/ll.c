@@ -31,11 +31,11 @@
 
 #include <blessed/errcodes.h>
 #include <blessed/log.h>
-#include <blessed/timer.h>
 #include <blessed/bdaddr.h>
 #include <blessed/random.h>
 
 #include "radio.h"
+#include "timer.h"
 #include "ll.h"
 
 /* Link Layer specification Section 2.1.2, Core 4.1 page 2503 */

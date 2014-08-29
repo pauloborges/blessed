@@ -31,9 +31,9 @@
 #include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
-#include <blessed/timer.h>
 #include <blessed/log.h>
 
+#include "timer.h"
 #include "nrf51822.h"
 
 #define HFCLK				16000000UL

@@ -31,7 +31,6 @@
 #include <nrf51_bitfields.h>
 
 #include <blessed/errcodes.h>
-#include <blessed/timer.h>
 
 #include "radio.h"
 #include "nrf51822.h"

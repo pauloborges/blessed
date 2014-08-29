@@ -27,9 +27,10 @@
 #include <string.h>
 
 #include <blessed/log.h>
-#include <blessed/timer.h>
 #include <blessed/random.h>
 #include <blessed/evtloop.h>
+
+#include "timer.h"
 
 #define TIMER				TIMER_SECONDS(1)
 
