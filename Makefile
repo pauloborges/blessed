@@ -69,7 +69,10 @@ clean:
 	@echo -e "CLEAN"
 	@rm -rf $(BUILD_PATH) *.log
 
-examples: clean all
+maintainer-clean: clean
+	$(MAKE) -C examples clean
+
+examples: all
 	$(MAKE) -C examples
 
 .PHONY: all clean examples
