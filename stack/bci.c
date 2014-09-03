@@ -65,7 +65,7 @@ void bci_get_advertising_params(struct bci_adv_params *params)
 
 int16_t bci_set_advertising_params(const struct bci_adv_params *params)
 {
-	if (!params->chmap || (!params->chmap & !BCI_ADV_CH_ALL))
+	if (!params->chmap || (params->chmap & ~BCI_ADV_CH_ALL))
 		return -EINVAL;
 
 	if (params->interval > BCI_ADV_INTERVAL_MAX)
