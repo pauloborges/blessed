@@ -1,6 +1,7 @@
 # BLESSED
 
 [![Build Status](https://travis-ci.org/pauloborges/blessed.svg?branch=devel)](https://travis-ci.org/pauloborges/blessed)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/1390/badge.svg)](https://scan.coverity.com/projects/1390)
 
 **Blessed** is an open source implementation of a Bluetooth Low Energy stack
 targeting embedded bare-metal devices. **Blessed** aims to provide a flexible
