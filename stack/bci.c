@@ -224,6 +224,7 @@ int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...)
 			data += arglen;
 			break;
 		default:
+			va_end(args);
 			return -EINVAL;
 		}
 
