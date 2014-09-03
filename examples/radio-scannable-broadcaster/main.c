@@ -161,8 +161,8 @@ static void radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		goto stop;
 
 
-	tgt_rxadd = (pdu[0] & 0x10) >> 5;
-	our_txadd = (adv_scan_ind[0] & 0x8) >> 4;
+	tgt_rxadd = (pdu[0] & 0x80) >> 7;
+	our_txadd = (adv_scan_ind[0] & 0x40) >> 6;
 
 	/* If RxAdd isn't our address type, ignore the packet */
 	if (tgt_rxadd != our_txadd)
