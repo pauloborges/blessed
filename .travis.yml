@@ -7,10 +7,10 @@ install:
   - pip install requests
 
 before_script:
-  - tar -czf /tmp/blessed.tar.gz *
+  - tar -czf /tmp/blessed.tgz *
 
 script:
-  - ./remote_build.py http://104.131.28.104/compile /tmp/blessed.tar.gz
+  - ./remote_build.py http://104.131.28.104/compile /tmp/blessed.tgz
 
 after_script:
-  - rm -f /tmp/blessed.tar.gz
+  - rm -f /tmp/blessed.tgz
