@@ -278,15 +278,28 @@ static uint32_t generate_access_address(void)
 /**@brief Prepare the next Data Channel PDU to send in a connection.
  *
  * Use the tx_buffer and tx_len in conn_context.
+ *
+ * @param[in] control_pdu: if true, will issue a LL Control PDU with opCode
+ * 	LL_UNKNOWN_RSP (to answer to a received LL Control PDU) instead of a
+ * 	LL Data PDU
+ * @param[in] control_pdu_opcode: the opCode of the received LL Control PDU
  */
-static void prepare_next_data_pdu()
+static void prepare_next_data_pdu(bool control_pdu, uint8_t control_pdu_opcode)
 {
 	pdu_data_tx.nesn = conn_context.nesn;
 	pdu_data_tx.sn = conn_context.sn;
 	/* We assume that the master will send only 1 packet in every CE */
 	pdu_data_tx.md = 0UL;
 
-	if (conn_context.txlen > 0) {
+	if (control_pdu) {
+		/* LL Control isn't implemented at the moment, so reply
+		 * with an LL_UNKNOWN_RSP PDU to all LL Control PDUs */
+		pdu_data_tx.llid = LL_PDU_CONTROL;
+		pdu_data_tx.length = 2;
+		pdu_data_tx.payload[0] = LL_UNKNOWN_RSP;
+		pdu_data_tx.payload[1] = control_pdu_opcode;
+	}
+	else if (conn_context.txlen > 0) {
 		/* There is new data to send */
 		pdu_data_tx.llid = LL_PDU_DATA_START_COMPLETE;
 		pdu_data_tx.length = conn_context.txlen;
@@ -877,8 +890,11 @@ static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		/* ACK => send new data */
 		conn_context.sn++;
 
-		/* Prepare a new outgoing packet */
-		prepare_next_data_pdu();
+		/* Prepare a new packet according to what was just received */
+		if (rcvd_pdu->llid == LL_PDU_CONTROL)
+			prepare_next_data_pdu(true, rcvd_pdu->payload[0]);
+		else
+			prepare_next_data_pdu(false, 0x00);
 	}
 }
 
@@ -957,7 +973,7 @@ static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 						conn_master_radio_send_cb);
 
 		/* Prepare the Data PDU that will be sent */
-		prepare_next_data_pdu();
+		prepare_next_data_pdu(false, 0x00);
 
 		/* TODO notify application (cb function) */
 	}

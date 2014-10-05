@@ -81,6 +81,30 @@ typedef enum ll_pdu {
 	LL_PDU_ADV_SCAN_IND
 } ll_pdu_t;
 
+/* Link Layer specification, Section 2.4.2, Core 4.1 p. 2512-2521 */
+typedef enum ll_ctrl_pdu {
+	LL_CONNECTION_UPDATE_REQ,
+	LL_CHANNEL_MAP_REQ,
+	LL_TERMINATE_IND,
+	LL_ENC_REQ,
+	LL_ENC_RSP,
+	LL_START_ENC_REQ,
+	LL_START_ENC_RSP,
+	LL_UNKNOWN_RSP,
+	LL_FEATURE_REQ,
+	LL_FEATURE_RSP,
+	LL_PAUSE_ENC_REQ,
+	LL_PAUSE_ENC_RSP,
+	LL_VERSION_IND,
+	LL_REJECT_IND,
+	LL_SLAVE_FEATURE_REQ,
+	LL_CONNECTION_PARAM_REQ,
+	LL_CONNECTION_PARAM_RSP,
+	LL_REJECT_IND_EXT,
+	LL_PING_REQ,
+	LL_PING_RSP
+} ll_ctrl_pdu_t;
+
 /**@brief Connection parameters structure */
 /* TODO helper macros to convert to and from us */
 typedef struct {
