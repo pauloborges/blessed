@@ -181,7 +181,6 @@ static struct ll_pdu_adv pdu_scan_rsp;
 static struct ll_pdu_adv pdu_connect_req;
 static struct ll_pdu_data pdu_data_tx;
 
-
 static bool rx = false;
 static ll_conn_params_t ll_conn_params;
 static struct ll_conn_context conn_context;
@@ -819,6 +818,9 @@ static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	timer_stop(t_ll_ifs);
 
+	conn_context.superv_tmr = 0;
+	conn_context.flags |= LL_CONN_FLAGS_ESTABLISHED;
+
 	/* TODO : check CRC/MD bit to reply or close the CE */
 
 	/* TODO : implement ack/flow control according to
@@ -836,6 +838,23 @@ static void conn_master_interval_cb(void)
 {
 	/* LL spec, section 4.5, Core v4.1 p.2537-2547
 	 * LL spec, Section 2.4, Core 4.1 page 251 */
+	/* Handle supervision timer which is reset every time a new packet is
+	 * received
+	 * NOTE: this doesn't respect the spec as the timer's unit is
+	 * connInterval */
+	if ((!(conn_context.flags & LL_CONN_FLAGS_ESTABLISHED) &&
+				conn_context.superv_tmr >= 6) ||
+		((conn_context.flags & LL_CONN_FLAGS_ESTABLISHED) &&
+				conn_context.superv_tmr >=
+					(ll_conn_params.supervision_timeout /
+					ll_conn_params.conn_interval_min))) {
+		timer_stop(t_ll_interval);
+		current_state = LL_STATE_STANDBY;
+		/* TODO notify the app. */
+		DBG("Connection lost (supervision timeout), timer value : %u",
+						conn_context.superv_tmr);
+		return;
+	}
 
 	radio_stop();
 	radio_prepare(data_ch_idx_selection( &(conn_context.last_unmap_ch),
@@ -846,6 +865,7 @@ static void conn_master_interval_cb(void)
 	radio_send((uint8_t *)(&pdu_data_tx), RADIO_FLAGS_RX_NEXT);
 
 	conn_context.conn_evt_cnt++;
+	conn_context.superv_tmr++;
 
 	/* Next step : conn_master_radio_recv_cb (receive a packet from the
 	 * slave) or t_ll_ifs_cb (RX timeout) */
