@@ -179,6 +179,8 @@ static uint32_t t_scan_window;
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 static struct ll_pdu_adv pdu_connect_req;
+static struct ll_pdu_data pdu_data_tx;
+
 
 static bool rx = false;
 static ll_conn_params_t ll_conn_params;
@@ -272,6 +274,21 @@ static uint32_t generate_access_address(void)
 	/* TODO: check for the various other requirements in the spec */
 
 	return aa;
+}
+
+/**@brief Prepare the next Data Channel PDU to send in a connection.
+ *
+ * At the moment, send only Empty Data PDUs
+ */
+static void prepare_next_data_pdu()
+{
+	pdu_data_tx.nesn = conn_context.nesn;
+	pdu_data_tx.sn = conn_context.sn;
+	/* We assume that the master will send only 1 packet in every CE */
+	pdu_data_tx.md = 0UL;
+
+	pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
+	pdu_data_tx.length = 0;
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -798,6 +815,42 @@ int16_t ll_set_data_ch_map(uint64_t ch_map)
 	return 0;
 }
 
+static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
+{
+	timer_stop(t_ll_ifs);
+
+	/* TODO : check CRC/MD bit to reply or close the CE */
+
+	/* TODO : implement ack/flow control according to
+	 * LL spec, section 4.5.9, Core 4.1 p. 2545 */
+
+	 /* TODO : retrieve the data and notify the app. */
+}
+
+static void conn_master_radio_send_cb(bool active)
+{
+	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
+}
+
+static void conn_master_interval_cb(void)
+{
+	/* LL spec, section 4.5, Core v4.1 p.2537-2547
+	 * LL spec, Section 2.4, Core 4.1 page 251 */
+
+	radio_stop();
+	radio_prepare(data_ch_idx_selection( &(conn_context.last_unmap_ch),
+						conn_context.hop),
+						conn_context.aa,
+						conn_context.crcinit);
+
+	radio_send((uint8_t *)(&pdu_data_tx), RADIO_FLAGS_RX_NEXT);
+
+	conn_context.conn_evt_cnt++;
+
+	/* Next step : conn_master_radio_recv_cb (receive a packet from the
+	 * slave) or t_ll_ifs_cb (RX timeout) */
+}
+
 static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
@@ -818,8 +871,21 @@ static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		memcpy(pdu_connect_req.payload+BDADDR_LEN, rcvd_pdu->payload,
 								BDADDR_LEN);
 
-		/* TODO go to CONNECTION_MASTER state
-		TODO notify application (cb function) */
+		current_state = LL_STATE_CONNECTION_MASTER;
+
+		timer_stop(t_ll_interval);
+		timer_stop(t_ll_single_shot);
+		timer_start(t_ll_interval,
+					ll_conn_params.conn_interval_min*1250,
+						conn_master_interval_cb);
+
+		radio_set_callbacks(conn_master_radio_recv_cb,
+						conn_master_radio_send_cb);
+
+		/* Prepare the Data PDU that will be sent */
+		prepare_next_data_pdu();
+
+		/* TODO notify application (cb function) */
 	}
 	else {
 		radio_stop();
