@@ -74,6 +74,29 @@ struct __attribute__ ((packed)) ll_pdu_adv {
 	uint8_t		payload[LL_ADV_MTU_PAYLOAD];
 };
 
+/* Link Layer specification Section 2.4.2, Core 4.1 page 2512 */
+typedef enum ll_llid {
+	LL_PDU_DATA_FRAG_EMPTY = 1,	/* Data PDU fragment or Empty PDU */
+	LL_PDU_DATA_START_COMPLETE,	/* Complete Data PDU / 1st fragment */
+	LL_PDU_CONTROL			/* LL Control PDU */
+} ll_llid_t;
+
+/* Link Layer specification Section 2.4, Core 4.1 page 2511 */
+struct __attribute__ ((packed)) ll_pdu_data {
+	uint8_t		llid:2;		/* See ll_llid_t */
+	uint8_t		nesn:1;		/* Next expected sequence number */
+	uint8_t		sn:1;		/* Sequence number */
+	uint8_t		md:1;		/* More Data bit */
+	uint8_t		_rfu_0:3;	/* Reserved for future use */
+
+	uint8_t		length:5;	/* 0 <= payload length <= 31 */
+	uint8_t		_rfu_1:3;	/* Reserved for future use */
+
+	uint8_t		payload[LL_DATA_MTU_PAYLOAD];
+
+	uint8_t		mic[LL_DATA_MIC_LEN];	/* Message Integrity Check */
+};
+
 /* Link Layer specification Section 2.3, Core 4.1 pages 2508 */
 struct __attribute__ ((packed)) ll_pdu_scan_req {
 	uint8_t scana[BDADDR_LEN];

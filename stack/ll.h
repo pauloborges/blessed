@@ -38,6 +38,13 @@
 /* Link Layer specification Section 2.3.1, Core 4.1 page 2506 */
 #define LL_ADV_MTU_DATA			(LL_ADV_MTU_PAYLOAD - BDADDR_LEN)
 
+/* Link Layer specification Section 2.4, Core 4.1 page 2511 */
+#define LL_DATA_MIC_LEN			4
+
+/* Link Layer specification Section 2.4, Core 4.1 page 2511 */
+#define LL_DATA_MTU_PAYLOAD		(LL_MTU - LL_HEADER_LEN - \
+							LL_DATA_MIC_LEN)
+
 /* Link Layer specification Section 4.4.2.2, Core 4.1 page 2528 */
 #define LL_ADV_INTERVAL_MIN_CONN	20000		/* 20 ms */
 #define LL_ADV_INTERVAL_MIN_NONCONN	100000		/* 100 ms */
