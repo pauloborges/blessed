@@ -277,7 +277,7 @@ static uint32_t generate_access_address(void)
 
 /**@brief Prepare the next Data Channel PDU to send in a connection.
  *
- * At the moment, send only Empty Data PDUs
+ * Use the tx_buffer and tx_len in conn_context.
  */
 static void prepare_next_data_pdu()
 {
@@ -286,8 +286,21 @@ static void prepare_next_data_pdu()
 	/* We assume that the master will send only 1 packet in every CE */
 	pdu_data_tx.md = 0UL;
 
-	pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
-	pdu_data_tx.length = 0;
+	if (conn_context.txlen > 0) {
+		/* There is new data to send */
+		pdu_data_tx.llid = LL_PDU_DATA_START_COMPLETE;
+		pdu_data_tx.length = conn_context.txlen;
+		memcpy(pdu_data_tx.payload, conn_context.txbuf,
+						conn_context.txlen);
+
+		/* Data in the TX buffer is now outdated */
+		conn_context.txlen = 0;
+	}
+	else {
+		/* No new data => send Empty Data PDU */
+		pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
+		pdu_data_tx.length = 0;
+	}
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -816,17 +829,57 @@ int16_t ll_set_data_ch_map(uint64_t ch_map)
 
 static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
+	struct ll_pdu_data *rcvd_pdu = (struct ll_pdu_data *)(pdu);
+
 	timer_stop(t_ll_ifs);
 
 	conn_context.superv_tmr = 0;
 	conn_context.flags |= LL_CONN_FLAGS_ESTABLISHED;
 
-	/* TODO : check CRC/MD bit to reply or close the CE */
+	/* Hypothesis for simplification : the connection event is closed when
+	 * the slave has sent a packet, regardless of CRC match or MD bit.
+	 * The master will only send one packet in each CE.
+	 * See LL spec, section 4.5.6, Core 4.1 p.2542 */
 
-	/* TODO : implement ack/flow control according to
+	/* Ack/flow control according to :
 	 * LL spec, section 4.5.9, Core 4.1 p. 2545 */
+	if (!crc) {
+		/* ignore incoming data
+		 * equivalent to a NACK => resend the old data */
+		DBG("Packet with bad CRC received");
+		return;
+	}
 
-	 /* TODO : retrieve the data and notify the app. */
+	if (rcvd_pdu->sn == (conn_context.nesn & 0x01))	{
+		/* New incoming Data Channel PDU
+		 * local NESN *may* be incremented to allow flow control */
+		conn_context.nesn++;
+
+		/* Get data if the received packet wasn't a LL Control PDU or
+		 * an Empty PDU */
+		if (rcvd_pdu->llid != LL_PDU_CONTROL && rcvd_pdu->length > 0) {
+			conn_context.rxlen = rcvd_pdu->length;
+			memcpy(conn_context.rxbuf, rcvd_pdu->payload,
+							rcvd_pdu->length);
+
+			/* TODO notify app that new data is available */
+		}
+	}
+	else {
+		/* Old incoming Data Channel PDU => ignore */
+	}
+
+	if (rcvd_pdu->nesn == (conn_context.sn & 0x01)) {
+		/* NACK => resend old data (do nothing) */
+		DBG("NACK received");
+	}
+	else {
+		/* ACK => send new data */
+		conn_context.sn++;
+
+		/* Prepare a new outgoing packet */
+		prepare_next_data_pdu();
+	}
 }
 
 static void conn_master_radio_send_cb(bool active)
@@ -837,7 +890,8 @@ static void conn_master_radio_send_cb(bool active)
 static void conn_master_interval_cb(void)
 {
 	/* LL spec, section 4.5, Core v4.1 p.2537-2547
-	 * LL spec, Section 2.4, Core 4.1 page 251 */
+	 * LL spec, Section 2.4, Core 4.1 page 2511 */
+
 	/* Handle supervision timer which is reset every time a new packet is
 	 * received
 	 * NOTE: this doesn't respect the spec as the timer's unit is
