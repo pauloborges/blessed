@@ -161,6 +161,7 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 			bdaddr_t* peer_addresses, uint16_t num_addresses);
 int16_t ll_conn_cancel(void);
 int16_t ll_conn_terminate(void);
+int16_t ll_conn_send(uint8_t *data, uint8_t len);
 
 /* LL "platform" interface */
 int16_t ll_plat_init(void);

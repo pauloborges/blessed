@@ -1133,3 +1133,23 @@ int16_t ll_conn_terminate(void)
 
 	return 0;
 }
+
+/**@brief Set new data to send to the peer when in connection state
+ *
+ * @param[in] data: Pointer to a buffer containing the data to send
+ * @param[in] len: The number of bytes to send. Must be <= 27
+ * See Link Layer specification, Section 2.4, Core v4.1 p.2511
+ */
+int16_t ll_conn_send(uint8_t *data, uint8_t len)
+{
+	if (len > LL_DATA_MTU_PAYLOAD) {
+		ERROR("Max payload length : %u bytes in connection state",
+							LL_DATA_MTU_PAYLOAD);
+		return -EINVAL;
+	}
+
+	conn_context.txbuf = data;
+	conn_context.txlen = len;
+
+	return 0;
+}
