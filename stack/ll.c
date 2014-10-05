@@ -97,6 +97,35 @@ struct __attribute__ ((packed)) ll_pdu_connect_payload {
 	uint8_t		sca:3;			/* Master sleep clock accuracy */
 };
 
+/* Connection flags, used to keep track of various events and procedures in
+ * a connection */
+#define LL_CONN_FLAGS_ESTABLISHED	1	/* conn. created/established */
+
+/** This structure contains all the fields needed to establish and maintain a
+ * connection, on Master or Slave side. For a Master involved in multiple
+ * simultaneous connections, there must be one structure per connection.
+ *
+ * Note that several parameters : conn interval, slave latency, supervision
+ * timeout and channel map are defined for all connections in ll_conn_params
+ * structure.
+ *
+ * See Link Layer specification Section 4.5, Core 4.1 pages 2537-2547*/
+struct ll_conn_context {
+	uint32_t	aa;		/**< Access Address */
+	uint32_t	crcinit;	/**< CRC init. value (3 bytes) */
+	uint8_t		hop;		/**< hopIncrement for ch. selection */
+	uint8_t		last_unmap_ch;	/**< last unmapped channel used */
+	uint16_t	conn_evt_cnt;	/**< Connection Event counter */
+	uint16_t	superv_tmr;	/**< Connection supervision timer */
+	uint8_t 	sn;		/**< transmitSeqNum for ack. */
+	uint8_t		nesn;		/**< nextExpectedSeqNum for ack. */
+	uint8_t	*	txbuf;		/**< TX buffer, handled in app. */
+	uint8_t		txlen;		/**< Nb of used bytes in TX buffer */
+	uint8_t	*	rxbuf;		/**< RX buffer, handled in app. */
+	uint8_t		rxlen;		/**< Nb of used bytes in RX buffer */
+	uint32_t	flags; 		/**< conn. flags, see LL_CONN_FLAGS_* */
+};
+
 static const bdaddr_t *laddr;
 static ll_states_t current_state;
 
@@ -129,6 +158,7 @@ static struct ll_pdu_adv pdu_connect_req;
 
 static bool rx = false;
 static ll_conn_params_t ll_conn_params;
+static struct ll_conn_context conn_context;
 /* Internal pointer to an array of accepted peer addresses */
 static bdaddr_t *ll_peer_addresses;
 static uint16_t ll_num_peer_addresses; /* Size of the accepted peers array */
@@ -495,6 +525,35 @@ static void init_connect_req_pdu()
 
 }
 
+/**@brief Initialize the connection context structure at the beginning of a new
+ * connection, based on the data present in the CONNECT_REQ PDU
+ *
+ * See Link Layer specification Section 4.5, Core 4.1 pages 2537-2547
+ */
+static void init_conn_context()
+{
+	struct ll_conn_context *context = &conn_context;
+	struct ll_pdu_connect_payload *connect_req =
+		(struct ll_pdu_connect_payload*)(pdu_connect_req.payload);
+
+	context->aa = connect_req->aa;
+	context->crcinit = connect_req->crc_init;
+	context->hop = connect_req->hop;
+	context->last_unmap_ch = 0;
+	/* The CE counter is incremented at each CE and must be 0 on the first
+	 * CE */
+	context->conn_evt_cnt = 0xFFFF;
+	context->superv_tmr = 0;
+	context->sn = 0;
+	context->nesn = 0;
+	context->flags = 0;
+
+	context->txbuf = NULL;
+	context->txlen = 0;
+	context->rxbuf = NULL;
+	context->rxlen = 0;
+}
+
 int16_t ll_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
@@ -794,6 +853,7 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 
 	/* Generate new connection parameters and init CONNECT_REQ PDU */
 	init_connect_req_pdu();
+	init_conn_context();
 
 	radio_set_callbacks(init_radio_recv_cb, NULL);
 
