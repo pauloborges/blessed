@@ -70,6 +70,14 @@
 #define LL_SCAN_PASSIVE			0x00
 #define LL_SCAN_ACTIVE			0x01
 
+/* Values used for LL Version exchange.
+ * https://www.bluetooth.org/en-us/specification/assigned-numbers/link-layer
+ * https://www.bluetooth.org/en-us/specification/assigned-numbers/company-identifiers
+ */
+#define LL_VERS_NR			0x07 	/* Core v4.1 */
+#define LL_COMP_ID			0xFFFF 	/* Unassigned Company ID */
+#define LL_SUB_VERS_NR			0x0000	/* Implementation rev. nr */
+
 /* Link Layer specification Section 2.3, Core 4.1 page 2505 */
 typedef enum ll_pdu {
 	LL_PDU_ADV_IND,

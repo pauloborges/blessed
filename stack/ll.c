@@ -292,12 +292,31 @@ static void prepare_next_data_pdu(bool control_pdu, uint8_t control_pdu_opcode)
 	pdu_data_tx.md = 0UL;
 
 	if (control_pdu) {
-		/* LL Control isn't implemented at the moment, so reply
-		 * with an LL_UNKNOWN_RSP PDU to all LL Control PDUs */
+		/* Reply immediately to LL Control PDUs
+		 * Link Layer spec, Section 2.4.2, Core 4.1 p. 2512-2521
+		 * Link Layer spec, Section 5.1, Core 4.1 p. 2549-2568 */
 		pdu_data_tx.llid = LL_PDU_CONTROL;
-		pdu_data_tx.length = 2;
-		pdu_data_tx.payload[0] = LL_UNKNOWN_RSP;
-		pdu_data_tx.payload[1] = control_pdu_opcode;
+		switch(control_pdu_opcode) {
+		case LL_VERSION_IND:
+			/* TODO test endianness */
+			pdu_data_tx.length = 6;
+			pdu_data_tx.payload[0] = LL_VERSION_IND;
+			pdu_data_tx.payload[1] = LL_VERS_NR;
+			pdu_data_tx.payload[2] = (uint8_t)(0xFF & LL_COMP_ID);
+			pdu_data_tx.payload[3] =
+					(uint8_t)(0xFF & (LL_COMP_ID>>8));
+			pdu_data_tx.payload[4] =
+					(uint8_t)(0xFF & LL_SUB_VERS_NR);
+			pdu_data_tx.payload[5] =
+					(uint8_t)(0xFF & (LL_SUB_VERS_NR>>8));
+			break;
+		default:
+			/* Reply with an LL_UNKNOWN_RSP PDU to all other,
+			 * unsupported LL Control PDUs */
+			pdu_data_tx.length = 2;
+			pdu_data_tx.payload[0] = LL_UNKNOWN_RSP;
+			pdu_data_tx.payload[1] = control_pdu_opcode;
+		}
 	}
 	else if (conn_context.txlen > 0) {
 		/* There is new data to send */
