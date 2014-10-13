@@ -32,6 +32,7 @@
 
 #include <blessed/errcodes.h>
 #include <blessed/bdaddr.h>
+#include <blessed/events.h>
 #include <blessed/bci.h>
 
 #include "ll.h"

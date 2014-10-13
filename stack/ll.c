@@ -33,6 +33,7 @@
 #include <blessed/log.h>
 #include <blessed/bdaddr.h>
 #include <blessed/random.h>
+#include <blessed/events.h>
 
 #include "radio.h"
 #include "timer.h"
@@ -213,6 +214,10 @@ static void t_ll_ifs_cb(void)
 static adv_report_cb_t ll_adv_report_cb = NULL;
 static struct adv_report ll_adv_report;
 
+/** Callback function to report connection events (CONNECTION state) */
+static conn_evt_cb_t ll_conn_evt_cb = NULL;
+static uint8_t ll_conn_evt_params[BLE_EVT_PARAMS_MAX_SIZE];
+
 static __inline void send_scan_rsp(const struct ll_pdu_adv *pdu)
 {
 	struct ll_pdu_scan_req *scn;
@@ -299,8 +304,8 @@ static void prepare_next_data_pdu(bool control_pdu, uint8_t control_pdu_opcode)
 		pdu_data_tx.llid = LL_PDU_CONTROL;
 		pdu_data_tx.length = 2;
 		pdu_data_tx.payload[0] = LL_TERMINATE_IND;
-		/* REMOTE USER TERMINATED CONNECTION error code */
-		pdu_data_tx.payload[1] = 0x13;
+		pdu_data_tx.payload[1] =
+				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION;
 
 	}
 	else if (control_pdu) {
@@ -346,12 +351,39 @@ static void prepare_next_data_pdu(bool control_pdu, uint8_t control_pdu_opcode)
 
 		/* Data in the TX buffer is now outdated */
 		conn_context.txlen = 0;
+
+		/* Notify upper layers that data has been sent */
+		ble_evt_ll_packets_sent_t *packets_tx_params =
+				(ble_evt_ll_packets_sent_t*)ll_conn_evt_params;
+		packets_tx_params->index = 0;
+		ll_conn_evt_cb(BLE_EVT_LL_PACKETS_SENT, ll_conn_evt_params);
 	}
 	else {
 		/* No new data => send Empty Data PDU */
 		pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
 		pdu_data_tx.length = 0;
 	}
+}
+
+/**@brief Handle the end of a connection, which can be caused by various reasons
+ *
+ * @param[in] reason: an error code indicating why the connection is being
+ * 	closed.
+ */
+static void end_connection(uint8_t reason)
+{
+	current_state = LL_STATE_STANDBY;
+
+	timer_stop(t_ll_interval);
+	timer_stop(t_ll_single_shot);
+	timer_stop(t_ll_ifs);
+
+	/* Notify upper layers */
+	ble_evt_ll_disconnect_complete_t *disconn_params =
+			(ble_evt_ll_disconnect_complete_t*)ll_conn_evt_params;
+	disconn_params->index = 0;
+	disconn_params->reason = reason;
+	ll_conn_evt_cb(BLE_EVT_LL_DISCONNECT_COMPLETE, ll_conn_evt_params);
 }
 
 static __inline uint8_t first_adv_ch_idx(void)
@@ -881,6 +913,8 @@ int16_t ll_set_data_ch_map(uint64_t ch_map)
 static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_data *rcvd_pdu = (struct ll_pdu_data *)(pdu);
+	ble_evt_ll_packets_received_t *packets_rx_params =
+			(ble_evt_ll_packets_received_t*)ll_conn_evt_params;
 
 	timer_stop(t_ll_ifs);
 
@@ -913,7 +947,12 @@ static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 			memcpy(conn_context.rxbuf, rcvd_pdu->payload,
 							rcvd_pdu->length);
 
-			/* TODO notify app that new data is available */
+			/* Send an event to upper layers to notify that new
+			 * data is available */
+			packets_rx_params->index = 0;
+			packets_rx_params->length = conn_context.rxlen;
+			ll_conn_evt_cb(BLE_EVT_LL_PACKETS_RECEIVED,
+							ll_conn_evt_params);
 		}
 	}
 	else {
@@ -930,9 +969,13 @@ static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 
 		/* If a terminating procedure has been requested we can exit
 		 * connection state now */
-		if (conn_context.flags & (LL_CONN_FLAGS_TERM_PEER |
-						LL_CONN_FLAGS_TERM_LOCAL)) {
-			current_state = LL_STATE_STANDBY;
+		if (conn_context.flags & LL_CONN_FLAGS_TERM_PEER) {
+			end_connection(
+				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+			return;
+		} else if (conn_context.flags & LL_CONN_FLAGS_TERM_LOCAL) {
+			end_connection(
+				BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
 			return;
 		}
 
@@ -964,11 +1007,7 @@ static void conn_master_interval_cb(void)
 				conn_context.superv_tmr >=
 					(ll_conn_params.supervision_timeout /
 					ll_conn_params.conn_interval_min))) {
-		timer_stop(t_ll_interval);
-		current_state = LL_STATE_STANDBY;
-		/* TODO notify the app. */
-		DBG("Connection lost (supervision timeout), timer value : %u",
-						conn_context.superv_tmr);
+		end_connection(BLE_HCI_CONNECTION_TIMEOUT);
 		return;
 	}
 
@@ -990,6 +1029,9 @@ static void conn_master_interval_cb(void)
 static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
+	ble_evt_ll_connection_complete_t *conn_complete_params =
+			(ble_evt_ll_connection_complete_t*)ll_conn_evt_params;
+
 
 	/* Answer to ADV_IND (connectable undirected advertising event) and
 	 * ADV_DIRECT_IND (connectable directed advertising event) PDUs from
@@ -1021,7 +1063,14 @@ static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		/* Prepare the Data PDU that will be sent */
 		prepare_next_data_pdu(false, 0x00);
 
-		/* TODO notify application (cb function) */
+		/* Send an event to the upper layers */
+		conn_complete_params->index = 0;
+		conn_complete_params->peer_addr.type = rcvd_pdu->tx_add;
+		memcpy(conn_complete_params->peer_addr.addr, rcvd_pdu->payload,
+								BDADDR_LEN);
+
+		ll_conn_evt_cb(BLE_EVT_LL_CONNECTION_COMPLETE,
+							ll_conn_evt_params);
 	}
 	else {
 		radio_stop();
@@ -1055,9 +1104,14 @@ static void init_interval_cb(void)
  * @param [in] peer_addresses: a pointer to an array of Bluetooth addresses
  * 	to try to connect
  * @param [in] num_addresses: the size of the peer_addresses array
+ * @param [out] rx_buf: a pointer to an array to store incoming data from the
+ * 	peer device
+ * @param [out] conn_evt_cb: the function to call on connection events
  */
+
 int16_t ll_conn_create(uint32_t interval, uint32_t window,
-			bdaddr_t* peer_addresses, uint16_t num_addresses)
+	bdaddr_t* peer_addresses, uint16_t num_addresses, uint8_t* rx_buf,
+						conn_evt_cb_t conn_evt_cb)
 {
 	int16_t err_code;
 
@@ -1076,10 +1130,12 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 
 	ll_peer_addresses = peer_addresses;
 	ll_num_peer_addresses = num_addresses;
+	ll_conn_evt_cb = conn_evt_cb;
 
 	/* Generate new connection parameters and init CONNECT_REQ PDU */
 	init_connect_req_pdu();
 	init_conn_context();
+	conn_context.rxbuf = rx_buf;
 
 	radio_set_callbacks(init_radio_recv_cb, NULL);
 

@@ -29,6 +29,7 @@
 
 #include <blessed/errcodes.h>
 #include <blessed/bdaddr.h>
+#include <blessed/events.h>
 
 #include "ll.h"
 #include "nrf51822.h"

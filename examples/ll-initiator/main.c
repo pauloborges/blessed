@@ -31,6 +31,7 @@
 #include <blessed/bdaddr.h>
 #include <blessed/log.h>
 #include <blessed/evtloop.h>
+#include <blessed/events.h>
 
 #include "nrf_delay.h"
 
@@ -43,6 +44,8 @@ static const bdaddr_t addr = { { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF },
 							BDADDR_TYPE_RANDOM };
 
 static bdaddr_t peer_addr;
+
+static uint8_t in_buffer[LL_DATA_MTU_PAYLOAD];
 
 static __inline const char *format_address(const uint8_t *data)
 {
@@ -69,6 +72,22 @@ static __inline const char *format_data(const uint8_t *data, uint8_t len)
     return output;
 }
 
+
+void conn_evt_cb(ble_evt_t type, const void *data)
+{
+	const ble_evt_ll_connection_complete_t* conn_compl = data;
+
+	switch (type) {
+	case BLE_EVT_LL_CONNECTION_COMPLETE:
+		DBG("Connection complete, index %u, address %s",
+		conn_compl->index, format_address(conn_compl->peer_addr.addr));
+		break;
+	default:
+		break;
+	}
+}
+
+
 void adv_report_cb(struct adv_report *report)
 {
 	DBG("adv type %02x, addr type %02x", report->type, report->addr.type);
@@ -78,7 +97,8 @@ void adv_report_cb(struct adv_report *report)
 	memcpy(&peer_addr, &report->addr, sizeof(bdaddr_t));
 
 	ll_scan_stop();
-	ll_conn_create(SCAN_INTERVAL, SCAN_WINDOW, &peer_addr, 1);
+	ll_conn_create(SCAN_INTERVAL, SCAN_WINDOW, &peer_addr, 1, in_buffer,
+								conn_evt_cb);
 
 }
 

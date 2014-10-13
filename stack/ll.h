@@ -141,6 +141,9 @@ struct adv_report {
  * See HCI Funcional Specification Section 7.7.65.2, Core 4.1 page 1220 */
 typedef void (*adv_report_cb_t)(struct adv_report *report);
 
+/* Callback function for connection events */
+typedef void (*conn_evt_cb_t)(ble_evt_t type, const void *data);
+
 int16_t ll_init(const bdaddr_t *addr);
 
 /* Advertising */
@@ -158,7 +161,8 @@ int16_t ll_scan_stop(void);
 int16_t ll_set_conn_params(ll_conn_params_t* conn_params);
 int16_t ll_set_data_ch_map(uint64_t ch_map);
 int16_t ll_conn_create(uint32_t interval, uint32_t window,
-			bdaddr_t* peer_addresses, uint16_t num_addresses);
+	bdaddr_t* peer_addresses, uint16_t num_addresses, uint8_t* rx_buf,
+						conn_evt_cb_t conn_evt_cb);
 int16_t ll_conn_cancel(void);
 int16_t ll_conn_terminate(void);
 int16_t ll_conn_send(uint8_t *data, uint8_t len);
