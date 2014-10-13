@@ -28,6 +28,7 @@
 
 #include <blessed/bdaddr.h>
 #include <blessed/evtloop.h>
+#include <blessed/events.h>
 
 #include "ll.h"
 

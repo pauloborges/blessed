@@ -33,6 +33,7 @@
 #include <blessed/log.h>
 #include <blessed/bdaddr.h>
 #include <blessed/random.h>
+#include <blessed/events.h>
 
 #include "radio.h"
 #include "timer.h"
@@ -58,7 +59,8 @@ typedef enum ll_states {
 	LL_STATE_ADVERTISING,
 	LL_STATE_SCANNING,
 	LL_STATE_INITIATING,
-	LL_STATE_CONNECTION,
+	LL_STATE_CONNECTION_MASTER,
+	LL_STATE_CONNECTION_SLAVE,
 } ll_states_t;
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2504-2505 */
@@ -72,6 +74,29 @@ struct __attribute__ ((packed)) ll_pdu_adv {
 	uint8_t		_rfu_1:2;	/* Reserved for future use */
 
 	uint8_t		payload[LL_ADV_MTU_PAYLOAD];
+};
+
+/* Link Layer specification Section 2.4.2, Core 4.1 page 2512 */
+typedef enum ll_llid {
+	LL_PDU_DATA_FRAG_EMPTY = 1,	/* Data PDU fragment or Empty PDU */
+	LL_PDU_DATA_START_COMPLETE,	/* Complete Data PDU / 1st fragment */
+	LL_PDU_CONTROL			/* LL Control PDU */
+} ll_llid_t;
+
+/* Link Layer specification Section 2.4, Core 4.1 page 2511 */
+struct __attribute__ ((packed)) ll_pdu_data {
+	uint8_t		llid:2;		/* See ll_llid_t */
+	uint8_t		nesn:1;		/* Next expected sequence number */
+	uint8_t		sn:1;		/* Sequence number */
+	uint8_t		md:1;		/* More Data bit */
+	uint8_t		_rfu_0:3;	/* Reserved for future use */
+
+	uint8_t		length:5;	/* 0 <= payload length <= 31 */
+	uint8_t		_rfu_1:3;	/* Reserved for future use */
+
+	uint8_t		payload[LL_DATA_MTU_PAYLOAD];
+
+	uint8_t		mic[LL_DATA_MIC_LEN];	/* Message Integrity Check */
 };
 
 /* Link Layer specification Section 2.3, Core 4.1 pages 2508 */
@@ -95,6 +120,37 @@ struct __attribute__ ((packed)) ll_pdu_connect_payload {
 	uint64_t	ch_map:40;		/* channel map */
 	uint8_t		hop:5;			/* hop increment */
 	uint8_t		sca:3;			/* Master sleep clock accuracy */
+};
+
+/* Connection flags, used to keep track of various events and procedures in
+ * a connection */
+#define LL_CONN_FLAGS_ESTABLISHED	1	/* conn. created/established */
+#define LL_CONN_FLAGS_TERM_LOCAL	2	/* termination req by Host */
+#define LL_CONN_FLAGS_TERM_PEER		4	/* term. req by peer device */
+
+/** This structure contains all the fields needed to establish and maintain a
+ * connection, on Master or Slave side. For a Master involved in multiple
+ * simultaneous connections, there must be one structure per connection.
+ *
+ * Note that several parameters : conn interval, slave latency, supervision
+ * timeout and channel map are defined for all connections in ll_conn_params
+ * structure.
+ *
+ * See Link Layer specification Section 4.5, Core 4.1 pages 2537-2547*/
+struct ll_conn_context {
+	uint32_t	aa;		/**< Access Address */
+	uint32_t	crcinit;	/**< CRC init. value (3 bytes) */
+	uint8_t		hop;		/**< hopIncrement for ch. selection */
+	uint8_t		last_unmap_ch;	/**< last unmapped channel used */
+	uint16_t	conn_evt_cnt;	/**< Connection Event counter */
+	uint16_t	superv_tmr;	/**< Connection supervision timer */
+	uint8_t 	sn;		/**< transmitSeqNum for ack. */
+	uint8_t		nesn;		/**< nextExpectedSeqNum for ack. */
+	uint8_t	*	txbuf;		/**< TX buffer, handled in app. */
+	uint8_t		txlen;		/**< Nb of used bytes in TX buffer */
+	uint8_t	*	rxbuf;		/**< RX buffer, handled in app. */
+	uint8_t		rxlen;		/**< Nb of used bytes in RX buffer */
+	uint32_t	flags; 		/**< conn. flags, see LL_CONN_FLAGS_* */
 };
 
 static const bdaddr_t *laddr;
@@ -126,9 +182,11 @@ static uint32_t t_scan_window;
 static struct ll_pdu_adv pdu_adv;
 static struct ll_pdu_adv pdu_scan_rsp;
 static struct ll_pdu_adv pdu_connect_req;
+static struct ll_pdu_data pdu_data_tx;
 
 static bool rx = false;
 static ll_conn_params_t ll_conn_params;
+static struct ll_conn_context conn_context;
 /* Internal pointer to an array of accepted peer addresses */
 static bdaddr_t *ll_peer_addresses;
 static uint16_t ll_num_peer_addresses; /* Size of the accepted peers array */
@@ -155,6 +213,10 @@ static void t_ll_ifs_cb(void)
 /** Callback function to report advertisers (SCANNING state) */
 static adv_report_cb_t ll_adv_report_cb = NULL;
 static struct adv_report ll_adv_report;
+
+/** Callback function to report connection events (CONNECTION state) */
+static conn_evt_cb_t ll_conn_evt_cb = NULL;
+static uint8_t ll_conn_evt_params[BLE_EVT_PARAMS_MAX_SIZE];
 
 static __inline void send_scan_rsp(const struct ll_pdu_adv *pdu)
 {
@@ -220,6 +282,110 @@ static uint32_t generate_access_address(void)
 	return aa;
 }
 
+/**@brief Prepare the next Data Channel PDU to send in a connection.
+ *
+ * Use the tx_buffer and tx_len in conn_context.
+ *
+ * @param[in] control_pdu: if true, will issue a LL Control PDU with opCode
+ * 	LL_UNKNOWN_RSP (to answer to a received LL Control PDU) instead of a
+ * 	LL Data PDU
+ * @param[in] control_pdu_opcode: the opCode of the received LL Control PDU
+ */
+static void prepare_next_data_pdu(bool control_pdu, uint8_t control_pdu_opcode)
+{
+	pdu_data_tx.nesn = conn_context.nesn;
+	pdu_data_tx.sn = conn_context.sn;
+	/* We assume that the master will send only 1 packet in every CE */
+	pdu_data_tx.md = 0UL;
+
+	if (conn_context.flags & LL_CONN_FLAGS_TERM_LOCAL) {
+		/* If a termination has been requested locally, send only
+		 * LL_TERMINATE_IND PDUs until receiving an ack */
+		pdu_data_tx.llid = LL_PDU_CONTROL;
+		pdu_data_tx.length = 2;
+		pdu_data_tx.payload[0] = LL_TERMINATE_IND;
+		pdu_data_tx.payload[1] =
+				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION;
+
+	}
+	else if (control_pdu) {
+		/* Reply immediately to LL Control PDUs
+		 * Link Layer spec, Section 2.4.2, Core 4.1 p. 2512-2521
+		 * Link Layer spec, Section 5.1, Core 4.1 p. 2549-2568 */
+		pdu_data_tx.llid = LL_PDU_CONTROL;
+		switch(control_pdu_opcode) {
+		case LL_VERSION_IND:
+			/* TODO test endianness */
+			pdu_data_tx.length = 6;
+			pdu_data_tx.payload[0] = LL_VERSION_IND;
+			pdu_data_tx.payload[1] = LL_VERS_NR;
+			pdu_data_tx.payload[2] = (uint8_t)(0xFF & LL_COMP_ID);
+			pdu_data_tx.payload[3] =
+					(uint8_t)(0xFF & (LL_COMP_ID>>8));
+			pdu_data_tx.payload[4] =
+					(uint8_t)(0xFF & LL_SUB_VERS_NR);
+			pdu_data_tx.payload[5] =
+					(uint8_t)(0xFF & (LL_SUB_VERS_NR>>8));
+			break;
+		case LL_TERMINATE_IND:
+			/* Send Empty Data PDU then stop connection */
+			pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
+			pdu_data_tx.length = 0;
+
+			conn_context.flags |= LL_CONN_FLAGS_TERM_PEER;
+			break;
+		default:
+			/* Reply with an LL_UNKNOWN_RSP PDU to all other,
+			 * unsupported LL Control PDUs */
+			pdu_data_tx.length = 2;
+			pdu_data_tx.payload[0] = LL_UNKNOWN_RSP;
+			pdu_data_tx.payload[1] = control_pdu_opcode;
+		}
+	}
+	else if (conn_context.txlen > 0) {
+		/* There is new data to send */
+		pdu_data_tx.llid = LL_PDU_DATA_START_COMPLETE;
+		pdu_data_tx.length = conn_context.txlen;
+		memcpy(pdu_data_tx.payload, conn_context.txbuf,
+						conn_context.txlen);
+
+		/* Data in the TX buffer is now outdated */
+		conn_context.txlen = 0;
+
+		/* Notify upper layers that data has been sent */
+		ble_evt_ll_packets_sent_t *packets_tx_params =
+				(ble_evt_ll_packets_sent_t*)ll_conn_evt_params;
+		packets_tx_params->index = 0;
+		ll_conn_evt_cb(BLE_EVT_LL_PACKETS_SENT, ll_conn_evt_params);
+	}
+	else {
+		/* No new data => send Empty Data PDU */
+		pdu_data_tx.llid = LL_PDU_DATA_FRAG_EMPTY;
+		pdu_data_tx.length = 0;
+	}
+}
+
+/**@brief Handle the end of a connection, which can be caused by various reasons
+ *
+ * @param[in] reason: an error code indicating why the connection is being
+ * 	closed.
+ */
+static void end_connection(uint8_t reason)
+{
+	current_state = LL_STATE_STANDBY;
+
+	timer_stop(t_ll_interval);
+	timer_stop(t_ll_single_shot);
+	timer_stop(t_ll_ifs);
+
+	/* Notify upper layers */
+	ble_evt_ll_disconnect_complete_t *disconn_params =
+			(ble_evt_ll_disconnect_complete_t*)ll_conn_evt_params;
+	disconn_params->index = 0;
+	disconn_params->reason = reason;
+	ll_conn_evt_cb(BLE_EVT_LL_DISCONNECT_COMPLETE, ll_conn_evt_params);
+}
+
 static __inline uint8_t first_adv_ch_idx(void)
 {
 	if (adv_ch_map & LL_ADV_CH_37)
@@ -241,6 +407,35 @@ static __inline int16_t inc_adv_ch_idx(void)
 
 	return 0;
 }
+
+/**@brief Function that implement the Data channel index selection
+ * Used in connection states to determine the BLE channel to use for the next
+ * connection event.
+ *
+ * See Link Layer specification Section 4.5.8, Core v4.1 p.2544
+ *
+ * @param[in,out] unmapped_channel: a pointer to a variable containing the
+ *	lastUnmappedChannel defined in LL spec. This variable will be updated
+ * 	to store the new unmappedChannel.
+ * @param[in] hop: the hopIncrement defined in LL spec (increment between 2
+ * 	unmapped channels)
+ *
+ * @return the data channel index to use for the next connection event, according
+ * 	to the global channel map data_ch_map.
+ */
+static __inline__ uint8_t data_ch_idx_selection(uint8_t *unmapped_channel,
+								uint8_t hop)
+{
+	*unmapped_channel = (*unmapped_channel + hop) % 37;
+
+	/* Return unmapped_channel if it is an used channel */
+	if ( data_ch_map.mask & (1ULL << (*unmapped_channel)) )
+		return (*unmapped_channel);
+
+	else
+		return data_ch_map.used[(*unmapped_channel) % data_ch_map.cnt];
+}
+
 
 static void adv_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
@@ -466,6 +661,35 @@ static void init_connect_req_pdu()
 
 }
 
+/**@brief Initialize the connection context structure at the beginning of a new
+ * connection, based on the data present in the CONNECT_REQ PDU
+ *
+ * See Link Layer specification Section 4.5, Core 4.1 pages 2537-2547
+ */
+static void init_conn_context()
+{
+	struct ll_conn_context *context = &conn_context;
+	struct ll_pdu_connect_payload *connect_req =
+		(struct ll_pdu_connect_payload*)(pdu_connect_req.payload);
+
+	context->aa = connect_req->aa;
+	context->crcinit = connect_req->crc_init;
+	context->hop = connect_req->hop;
+	context->last_unmap_ch = 0;
+	/* The CE counter is incremented at each CE and must be 0 on the first
+	 * CE */
+	context->conn_evt_cnt = 0xFFFF;
+	context->superv_tmr = 0;
+	context->sn = 0;
+	context->nesn = 0;
+	context->flags = 0;
+
+	context->txbuf = NULL;
+	context->txlen = 0;
+	context->rxbuf = NULL;
+	context->rxlen = 0;
+}
+
 int16_t ll_init(const bdaddr_t *addr)
 {
 	int16_t err_code;
@@ -686,9 +910,128 @@ int16_t ll_set_data_ch_map(uint64_t ch_map)
 	return 0;
 }
 
+static void conn_master_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
+{
+	struct ll_pdu_data *rcvd_pdu = (struct ll_pdu_data *)(pdu);
+	ble_evt_ll_packets_received_t *packets_rx_params =
+			(ble_evt_ll_packets_received_t*)ll_conn_evt_params;
+
+	timer_stop(t_ll_ifs);
+
+	conn_context.superv_tmr = 0;
+	conn_context.flags |= LL_CONN_FLAGS_ESTABLISHED;
+
+	/* Hypothesis for simplification : the connection event is closed when
+	 * the slave has sent a packet, regardless of CRC match or MD bit.
+	 * The master will only send one packet in each CE.
+	 * See LL spec, section 4.5.6, Core 4.1 p.2542 */
+
+	/* Ack/flow control according to :
+	 * LL spec, section 4.5.9, Core 4.1 p. 2545 */
+	if (!crc) {
+		/* ignore incoming data
+		 * equivalent to a NACK => resend the old data */
+		DBG("Packet with bad CRC received");
+		return;
+	}
+
+	if (rcvd_pdu->sn == (conn_context.nesn & 0x01))	{
+		/* New incoming Data Channel PDU
+		 * local NESN *may* be incremented to allow flow control */
+		conn_context.nesn++;
+
+		/* Get data if the received packet wasn't a LL Control PDU or
+		 * an Empty PDU */
+		if (rcvd_pdu->llid != LL_PDU_CONTROL && rcvd_pdu->length > 0) {
+			conn_context.rxlen = rcvd_pdu->length;
+			memcpy(conn_context.rxbuf, rcvd_pdu->payload,
+							rcvd_pdu->length);
+
+			/* Send an event to upper layers to notify that new
+			 * data is available */
+			packets_rx_params->index = 0;
+			packets_rx_params->length = conn_context.rxlen;
+			ll_conn_evt_cb(BLE_EVT_LL_PACKETS_RECEIVED,
+							ll_conn_evt_params);
+		}
+	}
+	else {
+		/* Old incoming Data Channel PDU => ignore */
+	}
+
+	if (rcvd_pdu->nesn == (conn_context.sn & 0x01)) {
+		/* NACK => resend old data (do nothing) */
+		DBG("NACK received");
+	}
+	else {
+		/* ACK => send new data */
+		conn_context.sn++;
+
+		/* If a terminating procedure has been requested we can exit
+		 * connection state now */
+		if (conn_context.flags & LL_CONN_FLAGS_TERM_PEER) {
+			end_connection(
+				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+			return;
+		} else if (conn_context.flags & LL_CONN_FLAGS_TERM_LOCAL) {
+			end_connection(
+				BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
+			return;
+		}
+
+		/* Prepare a new packet according to what was just received */
+		if (rcvd_pdu->llid == LL_PDU_CONTROL)
+			prepare_next_data_pdu(true, rcvd_pdu->payload[0]);
+		else
+			prepare_next_data_pdu(false, 0x00);
+	}
+}
+
+static void conn_master_radio_send_cb(bool active)
+{
+	timer_start(t_ll_ifs, T_IFS, t_ll_ifs_cb);
+}
+
+static void conn_master_interval_cb(void)
+{
+	/* LL spec, section 4.5, Core v4.1 p.2537-2547
+	 * LL spec, Section 2.4, Core 4.1 page 2511 */
+
+	/* Handle supervision timer which is reset every time a new packet is
+	 * received
+	 * NOTE: this doesn't respect the spec as the timer's unit is
+	 * connInterval */
+	if ((!(conn_context.flags & LL_CONN_FLAGS_ESTABLISHED) &&
+				conn_context.superv_tmr >= 6) ||
+		((conn_context.flags & LL_CONN_FLAGS_ESTABLISHED) &&
+				conn_context.superv_tmr >=
+					(ll_conn_params.supervision_timeout /
+					ll_conn_params.conn_interval_min))) {
+		end_connection(BLE_HCI_CONNECTION_TIMEOUT);
+		return;
+	}
+
+	radio_stop();
+	radio_prepare(data_ch_idx_selection( &(conn_context.last_unmap_ch),
+						conn_context.hop),
+						conn_context.aa,
+						conn_context.crcinit);
+
+	radio_send((uint8_t *)(&pdu_data_tx), RADIO_FLAGS_RX_NEXT);
+
+	conn_context.conn_evt_cnt++;
+	conn_context.superv_tmr++;
+
+	/* Next step : conn_master_radio_recv_cb (receive a packet from the
+	 * slave) or t_ll_ifs_cb (RX timeout) */
+}
+
 static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 {
 	struct ll_pdu_adv *rcvd_pdu = (struct ll_pdu_adv*) pdu;
+	ble_evt_ll_connection_complete_t *conn_complete_params =
+			(ble_evt_ll_connection_complete_t*)ll_conn_evt_params;
+
 
 	/* Answer to ADV_IND (connectable undirected advertising event) and
 	 * ADV_DIRECT_IND (connectable directed advertising event) PDUs from
@@ -706,8 +1049,28 @@ static void init_radio_recv_cb(const uint8_t *pdu, bool crc, bool active)
 		memcpy(pdu_connect_req.payload+BDADDR_LEN, rcvd_pdu->payload,
 								BDADDR_LEN);
 
-		/* TODO go to CONNECTION_MASTER state
-		TODO notify application (cb function) */
+		current_state = LL_STATE_CONNECTION_MASTER;
+
+		timer_stop(t_ll_interval);
+		timer_stop(t_ll_single_shot);
+		timer_start(t_ll_interval,
+					ll_conn_params.conn_interval_min*1250,
+						conn_master_interval_cb);
+
+		radio_set_callbacks(conn_master_radio_recv_cb,
+						conn_master_radio_send_cb);
+
+		/* Prepare the Data PDU that will be sent */
+		prepare_next_data_pdu(false, 0x00);
+
+		/* Send an event to the upper layers */
+		conn_complete_params->index = 0;
+		conn_complete_params->peer_addr.type = rcvd_pdu->tx_add;
+		memcpy(conn_complete_params->peer_addr.addr, rcvd_pdu->payload,
+								BDADDR_LEN);
+
+		ll_conn_evt_cb(BLE_EVT_LL_CONNECTION_COMPLETE,
+							ll_conn_evt_params);
 	}
 	else {
 		radio_stop();
@@ -741,9 +1104,14 @@ static void init_interval_cb(void)
  * @param [in] peer_addresses: a pointer to an array of Bluetooth addresses
  * 	to try to connect
  * @param [in] num_addresses: the size of the peer_addresses array
+ * @param [out] rx_buf: a pointer to an array to store incoming data from the
+ * 	peer device
+ * @param [out] conn_evt_cb: the function to call on connection events
  */
+
 int16_t ll_conn_create(uint32_t interval, uint32_t window,
-			bdaddr_t* peer_addresses, uint16_t num_addresses)
+	bdaddr_t* peer_addresses, uint16_t num_addresses, uint8_t* rx_buf,
+						conn_evt_cb_t conn_evt_cb)
 {
 	int16_t err_code;
 
@@ -762,9 +1130,12 @@ int16_t ll_conn_create(uint32_t interval, uint32_t window,
 
 	ll_peer_addresses = peer_addresses;
 	ll_num_peer_addresses = num_addresses;
+	ll_conn_evt_cb = conn_evt_cb;
 
 	/* Generate new connection parameters and init CONNECT_REQ PDU */
 	init_connect_req_pdu();
+	init_conn_context();
+	conn_context.rxbuf = rx_buf;
 
 	radio_set_callbacks(init_radio_recv_cb, NULL);
 
@@ -799,6 +1170,42 @@ int16_t ll_conn_cancel(void)
 	current_state = LL_STATE_STANDBY;
 
 	DBG("");
+
+	return 0;
+}
+
+/**@brief Terminate the current connection
+ *
+ */
+int16_t ll_conn_terminate(void)
+{
+	if (current_state != LL_STATE_CONNECTION_MASTER)
+		return -ENOREADY;
+
+	conn_context.flags |= LL_CONN_FLAGS_TERM_LOCAL;
+	/* Force the preparation of the next data PDU, discarding current
+	 * operations */
+	prepare_next_data_pdu(false, 0);
+
+	return 0;
+}
+
+/**@brief Set new data to send to the peer when in connection state
+ *
+ * @param[in] data: Pointer to a buffer containing the data to send
+ * @param[in] len: The number of bytes to send. Must be <= 27
+ * See Link Layer specification, Section 2.4, Core v4.1 p.2511
+ */
+int16_t ll_conn_send(uint8_t *data, uint8_t len)
+{
+	if (len > LL_DATA_MTU_PAYLOAD) {
+		ERROR("Max payload length : %u bytes in connection state",
+							LL_DATA_MTU_PAYLOAD);
+		return -EINVAL;
+	}
+
+	conn_context.txbuf = data;
+	conn_context.txlen = len;
 
 	return 0;
 }
