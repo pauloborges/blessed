@@ -31,7 +31,7 @@ LDFLAGS			= $(PLATFORM_LDFLAGS)
 SOURCE_PATHS		= $(PLATFORM_SOURCE_PATHS)			\
 			  stack
 
-SOURCE_FILES		= $(PLATFORM_SOURCE_FILES)			\
+C_SOURCE_FILES		= $(PLATFORM_SOURCE_FILES)			\
 			  ll.c						\
 			  bci.c
 
@@ -39,7 +39,7 @@ ASM_PATHS		= $(PLATFORM_ASM_PATHS)
 
 ASM_FILES		= $(PLATFORM_ASM_FILES)
 
-C_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(SOURCE_FILES:.c=.o))
+C_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(C_SOURCE_FILES:.c=.o))
 ASM_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(ASM_FILES:.s=.o))
 
 vpath %.c $(SOURCE_PATHS)

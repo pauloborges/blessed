@@ -14,7 +14,8 @@ STACK_SIZE		?= 1024
 
 CROSS_COMPILE		?= arm-none-eabi-
 CC			= $(CROSS_COMPILE)gcc
-LD			= $(CROSS_COMPILE)gcc
+CPP			= $(CROSS_COMPILE)g++
+LD			= $(CROSS_COMPILE)g++
 AR			= $(CROSS_COMPILE)ar
 SIZE			= $(CROSS_COMPILE)size
 OBJCOPY			= $(CROSS_COMPILE)objcopy
@@ -38,6 +39,17 @@ PLATFORM_CFLAGS		= -mcpu=$(CPU)					\
 			  -D$(SOC)					\
 			  -mfloat-abi=soft				\
 			  --std=gnu99					\
+			  -mthumb					\
+			  -Werror					\
+			  -Wall						\
+			  -c
+
+PLATFORM_CPPFLAGS		= -mcpu=$(CPU)					\
+			  -D$(DEVICE_FAMILY)				\
+			  -D$(BOARD)					\
+			  -D$(SOC)					\
+			  -mfloat-abi=soft				\
+			  --std=c++03					\
 			  -mthumb					\
 			  -Werror					\
 			  -Wall						\
