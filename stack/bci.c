@@ -209,7 +209,7 @@ int8_t bci_ad_put(uint8_t *buffer, bci_ad_t type, ...)
 			data++;
 			*data = type;
 			data++;
-			strncpy((char *) data, str, arglen);
+			memcpy(data, str, arglen);
 			data += arglen;
 			break;
 		/* Fixed size array */
