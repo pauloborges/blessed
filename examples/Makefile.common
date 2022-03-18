@@ -32,7 +32,7 @@ CFLAGS			= -O2 -Wall $(PLATFORM_CFLAGS)			\
 			  $(PROJECT_CFLAGS)				\
 			  $(INCLUDES)
 
-CPPFLAGS		= O2 - Wall $(PLATFORM_CPPFLAGS)			\
+CPPFLAGS		= -O2 -Wall $(PLATFORM_CPPFLAGS)			\
 			  $(PROJECT_CPPFLAGS)				\
 			  $(INCLUDES)
 
@@ -47,7 +47,7 @@ ASM_PATHS		= $(PROJECT_ASM_PATHS)
 ASM_FILES		= $(PROJECT_ASM_FILES)
 
 C_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(C_SOURCE_FILES:.c=.o))
-CPP_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(CPP_SOURCE_FILES:.c=.o))
+CPP_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(CPP_SOURCE_FILES:.cpp=.o))
 ASM_OBJ_FILES		= $(addprefix $(BUILD_PATH)/, $(ASM_FILES:.s=.o))
 
 vpath %.c $(SOURCE_PATHS)
